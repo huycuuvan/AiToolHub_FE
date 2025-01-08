@@ -120,9 +120,9 @@ function TextAssistance() {
       <div className="relative mt-10 w-full max-w-2xl">
         <select
           onChange={handleHistorySelect}
-          className="w-full p-2 bg-gray-800 text-white rounded-lg"
+          className="w-full p-3  bg-gray-800 text-white rounded-lg"
         >
-          <option value="">Select a conversation</option>
+          <option value="">Chat history</option>
           {chatHistories.map((_, index) => (
             <option key={index} value={index}>
               Conversation {index + 1}
