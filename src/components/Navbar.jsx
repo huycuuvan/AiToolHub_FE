@@ -1,5 +1,4 @@
-import { appleImg, bagImg, searchImg } from "../utils";
-import { navLists } from "../constants";
+import { appleImg } from "../utils";
 import { Link } from "react-router";
 
 export const Navbar = () => {
@@ -22,11 +21,6 @@ export const Navbar = () => {
           >
             Text-to-Image
           </Link>
-        </div>
-
-        <div className="flex items-baseline gap-7 max-sm:justify-end">
-          <img src={searchImg} alt="search" width={18} height={18} />
-          <img src={bagImg} alt="bag" width={18} height={18} />
         </div>
       </nav>
     </header>

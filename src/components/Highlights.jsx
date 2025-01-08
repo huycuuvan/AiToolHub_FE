@@ -12,7 +12,7 @@ const Highlights = () => {
     (
       <section
         id="highlights"
-        className="w-screen overflow-hidden h-full common-padding bg-zinc"
+        className="w-screen overflow-hidden h-full common-padding bg-gradient-to-b from-gray-900 to-black"
       >
         <div className="screen-max-witdh">
           <div className="mb-12 md:flex w-full items-end justify-between">
