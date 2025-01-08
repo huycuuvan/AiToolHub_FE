@@ -1,23 +1,23 @@
-import Features from "./components/Features";
-import Footer from "./components/Footer";
-import Hero from "./components/Hero";
-import Highlights from "./components/Highlights";
-import HowItWorks from "./components/HowItWorks";
-import Model from "./components/Model";
+import React from "react";
+import { Routes, Route } from "react-router";
 import { Navbar } from "./components/Navbar";
+import TextAssistance from "./components/TextAssistance";
+import { TextToImage } from "./components/TextToImage";
+import { Home } from "./components/Home";
 
-function App() {
+const App = () => {
   return (
-    <main className="bg-black">
+    <div>
       <Navbar />
-      <Hero />
-      <Highlights />
-      <Model />
-      <Features />
-      <HowItWorks />
-      <Footer />
-    </main>
+      <div style={{ padding: "20px" }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/text-assistance" element={<TextAssistance />} />
+          <Route path="/text-to-image" element={<TextToImage />} />
+        </Routes>
+      </div>
+    </div>
   );
-}
+};
 
 export default App;
