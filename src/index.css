@@ -13,7 +13,7 @@ body {
   width: 100dvw;
   overflow-x: hidden;
   height: 100%;
-  background: #000;
+  background: linear-gradient(to bottom, #1a202c, #000000);
   border-color: #3b3b3b;
   user-select: none;
 }

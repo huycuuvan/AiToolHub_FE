@@ -35,6 +35,7 @@ import explore2 from "/assets/images/explore2.jpg";
 import chip from "/assets/images/chip.jpeg";
 import frame from "/assets/images/frame.png";
 import banner from "/assets/images/AI_website_banner.png";
+import character from "/assets/images/char.jpg";
 export const heroVideo = hmv;
 export const smallHeroVideo = smallmv;
 export const highlightFirstVideo = highlightFirstmv;
@@ -44,6 +45,7 @@ export const highlightFourthVideo = highlightFourthmv;
 export const exploreVideo = exploremv;
 export const frameVideo = framemv;
 
+export const characterImg = character;
 export const logoImg = logo;
 export const bannerImg = banner;
 export const appleImg = apple;
