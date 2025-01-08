@@ -20,7 +20,7 @@ export const Navbar = () => {
             to="/text-to-image"
             className="px-5 text-sm cursor-pointer text-gray hover:text-white transition-all"
           >
-            Text-to-Image
+            Generate Image
           </Link>
         </div>
 
