@@ -11,13 +11,13 @@ export const Navbar = () => {
         <div className="flex flex-1 justify-center max-sm:hidden">
           <Link
             to="/text-assistance"
-            className="px-5 text-sm cursor-pointer text-gray hover:text-white transition-all"
+            className="px-5 text-xl cursor-pointer text-gray hover:text-white transition-all"
           >
             Text Assistance
           </Link>
           <Link
             to="/text-to-image"
-            className="px-5 text-sm cursor-pointer text-gray hover:text-white transition-all"
+            className="px-5 text-xl cursor-pointer text-gray hover:text-white transition-all"
           >
             Generate Image
           </Link>

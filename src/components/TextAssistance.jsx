@@ -104,7 +104,7 @@ function TextAssistance() {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
+    <div className="flex flex-col items-center min-h-screen text-white">
       <h1 ref={titleRef} className="text-4xl font-bold mt-10">
         What is AI
       </h1>
@@ -154,7 +154,7 @@ function TextAssistance() {
           {loading && <div className="text-center italic">Đang tải...</div>}
         </div>
 
-        <div className="flex bg-gray-700 rounded-b-lg p-4">
+        <div className="flex bg-gray-700 rounded-b-lg p-4 mb-6">
           <input
             type="text"
             value={input}

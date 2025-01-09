@@ -2,6 +2,8 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { rightImg, watchImg } from "../utils";
 import VideoCarousel from "./VideoCarousel";
+import ImageRandom from "./ImageRandom";
+import { Link } from "react-router";
 
 const Highlights = () => {
   return (
@@ -21,17 +23,14 @@ const Highlights = () => {
             </h1>
             <div className="flex flex-wrap items-end gap-5">
               <p className="link">
-                Watch the film
-                <img src={watchImg} alt="" className="ml-2" />
-              </p>
-              <p className="link">
-                Watch the event
+                <Link to="/text-to-image">Go</Link>
+
                 <img src={rightImg} alt="" className="ml-2" />
               </p>
             </div>
           </div>
 
-          <VideoCarousel />
+          <ImageRandom />
         </div>
       </section>
     )

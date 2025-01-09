@@ -47,7 +47,7 @@ const Hero = () => {
   }, []);
 
   return (
-    <section className="w-full h-screen bg-transparent overflow-auto relative">
+    <section className="w-full h-screen overflow-auto relative">
       {/* Phần chữ */}
       <div
         id="hero-text"
@@ -69,7 +69,7 @@ const Hero = () => {
       </div>
       {/* Video nền */}
       <video
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0 p-2"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0 "
         autoPlay
         muted
         playsInline

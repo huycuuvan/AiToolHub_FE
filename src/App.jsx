@@ -9,7 +9,7 @@ const App = () => {
   return (
     <div>
       <Navbar />
-      <div style={{ padding: "20px" }}>
+      <div>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/text-assistance" element={<TextAssistance />} />
