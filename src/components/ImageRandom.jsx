@@ -1,76 +1,54 @@
 import gsap from "gsap";
-import { blackImg, blueImg, chipImg, heroImg } from "../utils";
-import { useRef, useEffect } from "react";
+import ScrollTrigger from "gsap/ScrollTrigger";
+import {
+  img2Light1Img,
+  img2Light2Img,
+  img2Light3Img,
+  img2Light4Img,
+} from "../utils";
+import { useEffect, useRef } from "react";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const ImageRandom = () => {
-  const imgs = useRef([]); // Start with an empty array
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    function randomFade() {
-      imgs.current.forEach((img, index) => {
-        if (Math.random() < 0.5) {
-          // Some images fade out
-          gsap.to(img, { opacity: 0, scale: 0, transformOrigin: "50% 50%" });
-        } else {
-          // Some images fade in
-          gsap.to(img, {
-            ease: "sine.inOut",
-            opacity: 1,
-            scale: 1,
-            transformOrigin: "50% 50%",
-          });
-        }
+    const images = [img2Light1Img, img2Light2Img, img2Light3Img, img2Light4Img];
+
+    // GSAP ScrollTrigger animation
+    const timeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top top",
+        end: `+=${images.length * 100}%`, // Tăng chiều dài scroll dựa trên số lượng ảnh
+        scrub: true,
+        pin: true, // Pin vùng container
+        // markers: true, // Uncomment để debug
+      },
+    });
+
+    // Thêm animation thay đổi ảnh nền vào timeline
+    images.forEach((image) => {
+      timeline.to(containerRef.current, {
+        backgroundImage: `url(${image})`,
+        duration: 1,
+        ease: "none",
       });
-      gsap.delayedCall(1.8, randomFade); // Adjusted delay timing
-    }
-
-    randomFade(); // Start the animation
-
-    return () => {
-      gsap.globalTimeline.clear(); // Clean up the timeline on unmount
-    };
-  }, []); // Empty dependency array to run once on mount
-
-  const handleClick = () => {
-    gsap.globalTimeline.paused(!gsap.globalTimeline.paused());
-  };
+    });
+  }, []);
 
   return (
-    <div className="flex flex-row gap-5 justify-around">
-      <img
-        ref={(el) => (imgs.current[0] = el)} // Assigning each image to imgs.current
-        src={chipImg}
-        alt=""
-        width={50}
-        height={50}
-        className="object-contain"
-      />
-      <img
-        ref={(el) => (imgs.current[1] = el)}
-        src={heroImg}
-        alt=""
-        width={50}
-        height={50}
-        className="object-contain"
-      />
-      <img
-        ref={(el) => (imgs.current[2] = el)}
-        src={blueImg}
-        alt=""
-        width={50}
-        height={50}
-        className="object-contain"
-      />
-      <img
-        ref={(el) => (imgs.current[3] = el)}
-        src={blackImg}
-        alt=""
-        width={50}
-        height={50}
-        className="object-contain"
-      />
-      <button onClick={handleClick}>Pause/Resume</button>
-    </div>
+    <div
+      ref={containerRef}
+      className="w-full h-screen"
+      style={{
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundImage: `url(${img2Light1Img})`, // Ảnh mặc định ban đầu
+      }}
+    ></div>
   );
 };
 

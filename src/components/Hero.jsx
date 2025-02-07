@@ -2,6 +2,7 @@ import gsap from "gsap";
 import { useEffect, useState } from "react";
 import { heroVideo, smallHeroVideo } from "../utils";
 import { Link } from "react-router";
+import { TweenLite } from "gsap/gsap-core";
 
 const Hero = () => {
   const [videoSrc, setVideoSrc] = useState(
@@ -28,8 +29,14 @@ const Hero = () => {
     // Hiệu ứng chữ xuất hiện
     gsap.fromTo(
       "#hero-text",
-      { opacity: 0, y: 50 },
-      { opacity: 1, y: 0, duration: 1, delay: 2 }
+      { opacity: 0, y: 20 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 2,
+        delay: 1.5,
+        ease: "power3.out",
+      }
     );
 
     // Hiệu ứng nút xuất hiện sau chữ
@@ -51,33 +58,28 @@ const Hero = () => {
       {/* Phần chữ */}
       <div
         id="hero-text"
-        className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-white text-4xl md:text-6xl font-bold text-center"
+        className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-white text-2xl md:text-3xl font-bold text-center"
       >
-        AI that changes everything.
+        Your next big idea starts with AI Tool Hub! Unlock the power of
+        artificial intelligence with our innovative platform. Discover a wide
+        range of cutting-edge AI tools and features designed to spark
+        creativity, streamline workflows, and bring your ideas to life in
+        groundbreaking ways.
       </div>
       {/* Nút "Try it" */}
       <div
         id="hero-button"
-        className="absolute top-[45%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
+        className="absolute top-[45%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 my-4 "
       >
         <Link
           to="/text-assistance"
-          className="bg-blue-500 text-white px-6 py-3 rounded-lg text-lg font-medium hover:bg-blue-600 transition"
+          className="bg-blue-500 text-white px-6 py-3 rounded-lg text-lg font-medium hover:bg-blue-600 transition "
         >
-          Try it
+          <button>
+            Stay tuned for the future of AI innovation with AI Tool Hub!
+          </button>
         </Link>
       </div>
-      {/* Video nền */}
-      <video
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0 "
-        autoPlay
-        muted
-        playsInline
-        key={videoSrc}
-        loop
-      >
-        <source src={videoSrc} type="video/mp4" />
-      </video>
     </section>
   );
 };
