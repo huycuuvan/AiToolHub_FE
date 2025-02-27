@@ -42,10 +42,16 @@ export const Navbar = () => {
           >
             Text to speech
           </Link>
+          <Link
+            to="/image-to-text"
+            className="px-5 text-3xl cursor-pointer text-white hover:text-white transition-all"
+          >
+            Image to Text Converter
+          </Link>
         </div>
         {user ? (
           <div className="flex items-center gap-4">
-            <span className="text-2xl text-white">{user.name}</span>
+            <span className="text-2xl text-white">{user.username}</span>
             <button
               onClick={logout}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"

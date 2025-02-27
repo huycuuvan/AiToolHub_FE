@@ -7,6 +7,8 @@ import { Login } from "./components/Login";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "./context/AuthContext";
 import TextToSpeech from "./components/TextToSpeech";
+import ImageToText from "./components/ImageToText";
+import { SignUp } from "./components/SignUp";
 
 const App = () => {
   const clientId =
@@ -17,11 +19,12 @@ const App = () => {
       <AuthProvider>
         <Routes>
           <Route index element={<Home />} />
-          <Route path="text-assistance" element={<TextAssistance />} />
-          <Route path="text-to-image" element={<TextToImage />} />
-          <Route path="text-to-speech" element={<TextToSpeech />} />
-
+          <Route path="/text-assistance" element={<TextAssistance />} />
+          <Route path="/text-to-image" element={<TextToImage />} />
+          <Route path="/text-to-speech" element={<TextToSpeech />} />
+          <Route path="/image-to-text" element={<ImageToText />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
         </Routes>
       </AuthProvider>
     </GoogleOAuthProvider>

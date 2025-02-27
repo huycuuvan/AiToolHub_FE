@@ -1,5 +1,5 @@
 import { GoogleLogin } from "@react-oauth/google";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { useNavigate } from "react-router";
 import { AuthContext } from "../context/AuthContext";
 import { jwtDecode } from "jwt-decode";
@@ -7,23 +7,60 @@ import { jwtDecode } from "jwt-decode";
 export const Login = () => {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
-  const handleGoogleSuccess = (credentialResponse) => {
-    const token = credentialResponse.credential; // Lấy JWT từ response
-    const decodedToken = jwtDecode(token); // Giải mã JWT
+  const [username, setUsername] = useState(""); // Đổi từ email -> username
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
 
-    console.log("Decoded Token:", decodedToken); // Xem thông tin người dùng trong console
+  const handleGoogleSuccess = (credentialResponse) => {
+    const token = credentialResponse.credential;
+    const decodedToken = jwtDecode(token);
+
+    console.log("Decoded Token:", decodedToken);
 
     const userData = {
       name: decodedToken.name,
       email: decodedToken.email,
-      picture: decodedToken.picture, // Ảnh đại diện của người dùng
+      picture: decodedToken.picture,
     };
 
-    login(userData); // Cập nhật trạng thái người dùng
-    navigate("/"); // Chuyển hướng về trang chủ
+    login(userData);
+    navigate("/");
   };
+
   const handleGoogleFailure = (error) => {
     console.log("Google Login Failed:", error);
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const text = await response.text(); // Lấy phản hồi dạng text
+
+      let data;
+      try {
+        data = JSON.parse(text); // Thử parse JSON
+      } catch (error) {
+        data = { message: text }; // Nếu không phải JSON, coi như text
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      login(data);
+      navigate("/");
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   return (
@@ -31,19 +68,22 @@ export const Login = () => {
       <div className="w-full h-screen bg-gradient-to-br from-black via-gray-600 to-black flex justify-center items-center">
         <div className="w-1/2 bg-transparent p-8 rounded-lg shadow-lg">
           <h1 className="text-4xl font-bold text-white text-center">Login</h1>
-          <form className="mt-5">
+          {error && <p className="text-red-500 text-center mt-2">{error}</p>}
+          <form className="mt-5" onSubmit={handleSubmit}>
             <div className="mb-5">
               <label
-                htmlFor="email"
+                htmlFor="username"
                 className="block text-sm font-medium text-white"
               >
-                Email
+                Username
               </label>
               <input
-                type="email"
-                id="email"
-                name="email"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                type="text"
+                id="username"
+                name="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
               />
             </div>
             <div className="mb-5">
@@ -57,7 +97,9 @@ export const Login = () => {
                 type="password"
                 id="password"
                 name="password"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
               />
             </div>
             <button
