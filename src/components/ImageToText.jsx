@@ -72,7 +72,7 @@ export const ImageToText = () => {
   const copyToClipboard = () => {
     if (textRef.current) {
       navigator.clipboard.writeText(extractedText);
-      alert("Copied to clipboard!");
+      toast.success("Copied to clipboard!");
     }
   };
 
