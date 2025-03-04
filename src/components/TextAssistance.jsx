@@ -3,12 +3,13 @@ import ReactMarkdown from "react-markdown";
 import gsap from "gsap";
 import { Navbar } from "./Navbar";
 import axios from "axios";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function TextAssistance() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [chatHistories, setChatHistories] = useState([]);
   const [activeHistoryIndex, setActiveHistoryIndex] = useState(null);
 
@@ -48,7 +49,6 @@ function TextAssistance() {
     setMessages(updatedMessages);
     setInput("");
     setLoading(true);
-    setError(null);
 
     try {
       const response = await axios.post(
@@ -66,9 +66,12 @@ function TextAssistance() {
       const finalMessages = [...updatedMessages, aiResponse];
       setMessages(finalMessages);
 
+      toast.success("Phản hồi từ AI đã nhận được!");
+
       const conversationTitle =
         updatedMessages[0]?.text.substring(0, 50) + "...";
       const updatedHistories = [...chatHistories];
+
       if (activeHistoryIndex !== null && updatedHistories[activeHistoryIndex]) {
         updatedHistories[activeHistoryIndex] = finalMessages;
       } else {
@@ -82,7 +85,7 @@ function TextAssistance() {
       setChatHistories(updatedHistories);
       localStorage.setItem("chatHistories", JSON.stringify(updatedHistories));
     } catch (err) {
-      setError("Lỗi khi gọi API: " + err.message);
+      toast.error("Lỗi khi gọi API: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -104,11 +107,13 @@ function TextAssistance() {
     setChatHistories([]);
     setMessages([]);
     setActiveHistoryIndex(null);
+    toast.info("Lịch sử trò chuyện đã được xóa.");
   };
 
   const startNewChat = () => {
     setMessages([]);
     setActiveHistoryIndex(null);
+    toast.info("Bắt đầu cuộc trò chuyện mới!");
   };
 
   return (
@@ -179,7 +184,6 @@ function TextAssistance() {
             Gửi
           </button>
         </div>
-        {error && <div className="text-red-500 text-center mt-2">{error}</div>}
       </div>
     </div>
   );

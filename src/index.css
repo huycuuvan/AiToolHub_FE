@@ -13,12 +13,15 @@ body {
   width: 100dvw;
   overflow-x: hidden;
   height: auto;
-
+  font-size: medium;
   border-color: #3b3b3b;
   user-select: none;
-  font-family: "Jersey 15", sans-serif;
+  font-family: "Big Shoulders", sans-serif;
 }
 /* styles.css */
+header {
+  font-family: "Jersey 15", sans-serif;
+}
 
 @keyframes glow-animation {
   0% {

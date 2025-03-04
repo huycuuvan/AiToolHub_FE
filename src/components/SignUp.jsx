@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -7,7 +9,6 @@ export const SignUp = () => {
     email: "",
     password: "",
   });
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -16,7 +17,6 @@ export const SignUp = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
 
     try {
       const response = await fetch("http://localhost:8080/api/auth/register", {
@@ -32,25 +32,29 @@ export const SignUp = () => {
         throw new Error(data.message || "Đăng ký thất bại");
       }
 
-      alert("Đăng ký thành công! Hãy đăng nhập.");
-      navigate("/login");
+      toast.success("Đăng ký thành công! Hãy đăng nhập.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
+      setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message, { position: "top-right", autoClose: 3000 });
     }
   };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-900">
+      <ToastContainer />
       <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
         <h1 className="text-3xl font-bold text-white text-center">Sign Up</h1>
-        {error && <p className="text-red-500 text-center mt-2">{error}</p>}
         <form onSubmit={handleSubmit} className="mt-4">
           <input
             type="text"
             name="username"
             placeholder="Name"
             className="w-full p-2 mb-3 rounded"
-            value={formData.name}
+            value={formData.username}
             onChange={handleChange}
             required
           />

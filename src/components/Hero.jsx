@@ -69,7 +69,7 @@ const Hero = () => {
       {/* Nút "Try it" */}
       <div
         id="hero-button"
-        className="absolute top-[45%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 my-4 "
+        className="absolute top-[50%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 my-4 "
       >
         <Link
           to="/text-assistance"

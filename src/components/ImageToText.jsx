@@ -2,6 +2,7 @@ import gsap from "gsap";
 import { useState, useRef, useEffect } from "react";
 import { Navbar } from "./Navbar";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 export const ImageToText = () => {
   const [imageFile, setImageFile] = useState(null);
@@ -57,9 +58,12 @@ export const ImageToText = () => {
         const textData = response.data.map((item) => item.text).join(" ");
         setExtractedText(textData);
       }
+      toast.success("successfully!");
     } catch (err) {
       console.error("❌ Error extracting text:", err);
-      alert(`Error extracting text: ${err.response?.data?.error || err.message}`);
+      alert(
+        `Error extracting text: ${err.response?.data?.error || err.message}`
+      );
     } finally {
       setLoading(false);
     }
@@ -80,11 +84,20 @@ export const ImageToText = () => {
         <div ref={leftSection} className="flex-1 p-6 flex flex-col gap-6">
           <h3 className="text-lg font-semibold">Upload an Image</h3>
           <label className="cursor-pointer bg-gray-800 hover:bg-gray-700 p-3 rounded-lg shadow-md border border-gray-700 transition duration-200">
-            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
             <span className="block text-center ">Choose a file</span>
           </label>
           {imagePreview && (
-            <img src={imagePreview} alt="Uploaded Preview" className="w-full max-h-80 object-contain rounded-lg border border-gray-700" />
+            <img
+              src={imagePreview}
+              alt="Uploaded Preview"
+              className="w-full max-h-80 object-contain rounded-lg border border-gray-700"
+            />
           )}
           <button
             onClick={extractText}
@@ -100,7 +113,10 @@ export const ImageToText = () => {
         </div>
 
         {/* Right Section - Extracted Text */}
-        <div ref={rightSection} className="flex-1 flex flex-col justify-center p-6 bg-gray-800 rounded-lg shadow-md">
+        <div
+          ref={rightSection}
+          className="flex-1 flex flex-col justify-center p-6 bg-gray-800 rounded-lg shadow-md"
+        >
           {loading ? (
             <div className="flex flex-col justify-center items-center">
               <div className="w-12 h-12 border-4 border-t-white rounded-full animate-spin"></div>
@@ -124,7 +140,8 @@ export const ImageToText = () => {
             </div>
           ) : (
             <p className=" text-center">
-              No text extracted yet. Upload an image and click "Extract Text".
+              No text extracted yet. Upload an image and click &quot;Extract
+              Text&quot;.
             </p>
           )}
         </div>
