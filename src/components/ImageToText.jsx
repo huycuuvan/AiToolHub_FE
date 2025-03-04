@@ -1,7 +1,7 @@
 import gsap from "gsap";
 import { useState, useRef, useEffect } from "react";
 import { Navbar } from "./Navbar";
-import axios from "axios"; // Dùng axios trực tiếp thay vì axiosInstance
+import axios from "axios";
 
 export const ImageToText = () => {
   const [imageFile, setImageFile] = useState(null);
@@ -12,6 +12,7 @@ export const ImageToText = () => {
 
   const leftSection = useRef(null);
   const rightSection = useRef(null);
+  const textRef = useRef(null);
 
   useEffect(() => {
     gsap.fromTo(
@@ -46,19 +47,9 @@ export const ImageToText = () => {
       const formData = new FormData();
       formData.append("file", imageFile);
 
-      // Debugging: Kiểm tra nội dung formData
-      console.log("📌 FormData content:");
-      for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
-
       const response = await axios.post(apiEndpoint, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
-
-      console.log("✅ Response:", response.data);
 
       if (!response.data || response.data.length === 0) {
         setExtractedText("No text extracted.");
@@ -68,41 +59,40 @@ export const ImageToText = () => {
       }
     } catch (err) {
       console.error("❌ Error extracting text:", err);
-      alert(
-        `Error extracting text: ${err.response?.data?.error || err.message}`
-      );
+      alert(`Error extracting text: ${err.response?.data?.error || err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
+  const copyToClipboard = () => {
+    if (textRef.current) {
+      navigator.clipboard.writeText(extractedText);
+      alert("Copied to clipboard!");
+    }
+  };
+
   return (
-    <div className="bg-gradient-to-br from-black via-gray-600 to-black text-white min-h-screen flex  items-center flex-col">
+    <div className="bg-gradient-to-br from-black via-gray-700 to-black text-white min-h-screen flex flex-col items-center">
       <Navbar />
-      <div className="flex w-[90%] max-w-[1200px]  rounded-2xl shadow-lg overflow-hidden my-6 justify-center m-auto">
+      <div className="flex flex-col md:flex-row w-[90%] max-w-[1200px] rounded-2xl shadow-lg overflow-hidden my-8 bg-gray-900 p-6 gap-6">
         {/* Left Section - Upload Image */}
-        <div ref={leftSection} className="flex-1 p-8 flex flex-col gap-5">
+        <div ref={leftSection} className="flex-1 p-6 flex flex-col gap-6">
           <h3 className="text-lg font-semibold">Upload an Image</h3>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="p-2 border border-gray-700 rounded-md bg-gray-800"
-          />
+          <label className="cursor-pointer bg-gray-800 hover:bg-gray-700 p-3 rounded-lg shadow-md border border-gray-700 transition duration-200">
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+            <span className="block text-center ">Choose a file</span>
+          </label>
           {imagePreview && (
-            <img
-              src={imagePreview}
-              alt="Uploaded Preview"
-              className="mt-4 w-full max-h-80 object-contain rounded-lg"
-            />
+            <img src={imagePreview} alt="Uploaded Preview" className="w-full max-h-80 object-contain rounded-lg border border-gray-700" />
           )}
           <button
             onClick={extractText}
             disabled={loading}
-            className={`px-6 py-3 text-white rounded-lg text-base ${
+            className={`px-6 py-3 text-white rounded-lg text-base font-medium shadow-md transition duration-200 ${
               loading
                 ? "bg-gray-700 cursor-not-allowed"
-                : "bg-[#6c63ff] hover:bg-[#5753ff] cursor-pointer"
+                : "bg-[#6c63ff] hover:bg-[#5753ff] active:scale-95"
             }`}
           >
             {loading ? "Extracting..." : "Extract Text"}
@@ -110,22 +100,30 @@ export const ImageToText = () => {
         </div>
 
         {/* Right Section - Extracted Text */}
-        <div
-          ref={rightSection}
-          className="flex-1 flex justify-center items-center bg-gradient-to-br from-black via-gray-600 to-black rounded-2xl p-6"
-        >
+        <div ref={rightSection} className="flex-1 flex flex-col justify-center p-6 bg-gray-800 rounded-lg shadow-md">
           {loading ? (
             <div className="flex flex-col justify-center items-center">
               <div className="w-12 h-12 border-4 border-t-white rounded-full animate-spin"></div>
-              <p className="mt-3 text-white">Extracting text...</p>
+              <p className="mt-3 ">Extracting text...</p>
             </div>
           ) : extractedText ? (
-            <div className="w-full text-left bg-gray-800 p-4 rounded-md text-white">
-              <h3 className="text-lg font-semibold mb-2">Extracted Text:</h3>
-              <p className="whitespace-pre-wrap text-white">{extractedText}</p>
+            <div className="w-full text-left">
+              <h3 className="text-lg font-semibold mb-2 ">Extracted Text:</h3>
+              <textarea
+                ref={textRef}
+                readOnly
+                value={extractedText}
+                className="w-full bg-gray-900 p-3 rounded-md border border-gray-700 resize-none h-[20rem]"
+              />
+              <button
+                onClick={copyToClipboard}
+                className="mt-3 px-5 py-2 bg-[#6c63ff] hover:bg-[#5753ff] text-white rounded-lg shadow-md active:scale-95 transition duration-200"
+              >
+                Copy Text
+              </button>
             </div>
           ) : (
-            <p className="text-gray-400">
+            <p className=" text-center">
               No text extracted yet. Upload an image and click "Extract Text".
             </p>
           )}
