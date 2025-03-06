@@ -105,9 +105,9 @@ export const ImageToText = () => {
   return (
     <div className="bg-gradient-to-br from-black via-gray-700 to-black text-white min-h-screen flex flex-col items-center">
       <Navbar />
-      <div className="flex flex-col md:flex-row w-[90%] max-w-[1200px] rounded-2xl shadow-lg overflow-hidden my-8 bg-gray-900 p-6 gap-6">
+      <div className="flex flex-col md:flex-row w-[90%] max-w-[1200px] rounded-2xl shadow-lg overflow-hidden my-8 bg-gray-900 p-6 gap-6 absolute top-[15%]">
         {/* Left Section - Upload Image */}
-        <div ref={leftSection} className="flex-1 p-6 flex flex-col gap-6">
+        <div ref={leftSection} className="flex-1 p-8 flex flex-col gap-6">
           <h3 className="text-lg font-semibold">Upload an Image</h3>
 
           <div

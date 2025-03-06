@@ -61,7 +61,7 @@ export const TextToImage = () => {
   return (
     <div className="bg-gradient-to-br from-black via-gray-900 to-black min-h-screen text-white flex flex-col items-center">
       <Navbar />
-      <div className="flex flex-col lg:flex-row w-full max-w-5xl p-6 rounded-xl shadow-2xl bg-gray-800 mt-8 border border-gray-700">
+      <div className="flex flex-col lg:flex-row w-full max-w-5xl p-6 rounded-xl shadow-2xl bg-gray-800 mt-8 border border-gray-700 mt-8 absolute top-[15%]">
         <div className="flex-1 p-6">
           <h3 className="text-xl font-bold">Choose a Model</h3>
           <div className="grid grid-cols-2 gap-3 mt-3">

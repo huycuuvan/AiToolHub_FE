@@ -21,7 +21,7 @@ const TextToSpeech = () => {
         "https://api-inference.huggingface.co/models/facebook/musicgen-small",
         {
           headers: {
-            Authorization: "Bearer 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",
+            Authorization: "Bearer",
             "Content-Type": "application/json",
           },
           method: "POST",
