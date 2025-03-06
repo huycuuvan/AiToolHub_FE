@@ -51,7 +51,7 @@ function TextAssistance() {
     try {
       const response = await axios.post(
         "http://localhost:8080/api/tools/chatbot",
-        { message: input }
+        { messages: updatedMessages } // Gửi toàn bộ messages thay vì chỉ input
       );
 
       let aiText;
@@ -68,7 +68,7 @@ function TextAssistance() {
         aiText = "Unexpected response format";
       }
 
-      const aiResponse = { role: "assistant", text: aiText };
+      const aiResponse = { role: "model", text: aiText }; // Sử dụng "model" cho Gemini
       const finalMessages = [...updatedMessages, aiResponse];
       setMessages(finalMessages);
 
@@ -181,10 +181,10 @@ function TextAssistance() {
                   } mb-4`}
                 >
                   <div
-                    className={`max-w-[70%] p-4 rounded-lg shadow-md ${
+                    className={`max-w-[70%] p-4 rounded-lg shadow-md select-text ${
                       msg.role === "user"
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-700 text-gray-200"
+                        : "bg-gray-700 text-white" // Đổi text thành trắng
                     }`}
                   >
                     <ReactMarkdown>{msg.text || "Error: No text available"}</ReactMarkdown>
