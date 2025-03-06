@@ -17,7 +17,6 @@ function TextAssistance() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Initial animations
   useEffect(() => {
     gsap.fromTo(
       titleRef.current,
@@ -26,13 +25,11 @@ function TextAssistance() {
     );
   }, []);
 
-  // Load chat histories
   useEffect(() => {
     const storedHistories = JSON.parse(localStorage.getItem("chatHistories") || "[]");
     setChatHistories(storedHistories);
   }, []);
 
-  // Auto-scroll to latest message
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -116,128 +113,133 @@ function TextAssistance() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-900 text-white">
-      {/* Sidebar for Chat History */}
-      <div
-        className={`fixed inset-y-0 left-0 w-64 bg-gray-800 transform ${
-          isHistoryOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out z-20 lg:relative lg:translate-x-0 lg:w-72`}
-      >
-        <div className="p-4 border-b border-gray-700">
-          <h2 className="text-xl font-semibold">Chat History</h2>
-          <button
-            onClick={() => setIsHistoryOpen(false)}
-            className="lg:hidden text-gray-400 hover:text-white"
-          >
-            ✕
-          </button>
-        </div>
-        <div className="p-4 space-y-2 overflow-y-auto h-[calc(100vh-8rem)]">
-          {chatHistories.length === 0 ? (
-            <p className="text-gray-400">No history yet</p>
-          ) : (
-            chatHistories.map((history, index) => (
-              <button
-                key={index}
-                onClick={() => handleHistorySelect(index)}
-                className={`w-full text-left p-3 rounded-lg ${
-                  activeHistoryIndex === index ? "bg-blue-600" : "bg-gray-700 hover:bg-gray-600"
-                } transition-colors`}
-              >
-                {history.title}
-              </button>
-            ))
-          )}
-        </div>
-        <div className="absolute bottom-0 w-full p-4 border-t border-gray-700">
-          <button
-            onClick={handleClearHistory}
-            className="w-full p-2 bg-red-600 rounded-lg hover:bg-red-700 transition"
-          >
-            Clear History
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+      {/* Fixed Navbar */}
+      <Navbar />
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        <Navbar />
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div className="max-w-3xl mx-auto">
-            <h1 ref={titleRef} className="text-3xl font-bold mb-4 text-center">
-              AI Chat Assistant
-            </h1>
-            {messages.length === 0 && (
-              <div className="text-center text-gray-400">
-                Start a conversation by typing below...
-              </div>
-            )}
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex ${
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                } mb-4`}
-              >
-                <div
-                  className={`max-w-[70%] p-4 rounded-lg shadow-md ${
-                    msg.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-700 text-gray-200"
-                  }`}
-                >
-                  <ReactMarkdown>{msg.text || "Error: No text available"}</ReactMarkdown>
-                </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start mb-4">
-                <div className="bg-gray-700 p-4 rounded-lg shadow-md max-w-[70%]">
-                  <span className="text-gray-400 animate-pulse">Typing...</span>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
-
-        {/* Input Area */}
-        <div className="sticky bottom-0 p-6 bg-gray-900">
-          <div className="max-w-3xl mx-auto flex items-center bg-gray-800 rounded-full shadow-lg p-2">
-            <button
-              onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-              className="p-2 text-gray-400 hover:text-white lg:hidden"
-            >
-              ☰
-            </button>
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={handleInput}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask me anything..."
-              className="flex-1 bg-transparent text-white p-3 outline-none placeholder-gray-400"
-              disabled={loading}
-            />
-            <button
-              onClick={handleSend}
-              className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:bg-gray-500"
-              disabled={loading}
-            >
-              ➤
-            </button>
-          </div>
-          {error && <div className="text-red-500 text-center mt-2">{error}</div>}
-        </div>
-
-        {/* New Chat Button */}
-        <button
-          onClick={startNewChat}
-          className="fixed bottom-20 right-6 p-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition shadow-lg"
+      {/* Main Layout */}
+      <div className="flex flex-1 pt-16"> {/* pt-16 để tránh overlap với Navbar */}
+        {/* Fixed Chat History Sidebar */}
+        <div
+          className={`fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] bg-gray-800 z-20 transform ${
+            isHistoryOpen ? "translate-x-0" : "-translate-x-full"
+          } transition-transform duration-300 ease-in-out lg:translate-x-0`}
         >
-          New Chat
-        </button>
+          <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Chat History</h2>
+            <button
+              onClick={() => setIsHistoryOpen(false)}
+              className="lg:hidden text-gray-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="p-4 space-y-2 overflow-y-auto h-[calc(100%-12rem)]">
+            {chatHistories.length === 0 ? (
+              <p className="text-gray-400">No history yet</p>
+            ) : (
+              chatHistories.map((history, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleHistorySelect(index)}
+                  className={`w-full text-left p-3 rounded-lg ${
+                    activeHistoryIndex === index ? "bg-blue-600" : "bg-gray-700 hover:bg-gray-600"
+                  } transition-colors`}
+                >
+                  {history.title}
+                </button>
+              ))
+            )}
+          </div>
+          <div className="absolute bottom-0 w-full p-4 border-t border-gray-700">
+            <button
+              onClick={handleClearHistory}
+              className="w-full p-2 bg-red-600 rounded-lg hover:bg-red-700 transition"
+            >
+              Clear History
+            </button>
+          </div>
+        </div>
+
+        {/* Chat Content */}
+        <div className="flex-1 flex flex-col ml-0 lg:ml-64"> {/* ml-64 để tránh overlap sidebar */}
+          <div className="flex-1 p-6 overflow-y-auto">
+            <div className="max-w-3xl mx-auto">
+              <h1 ref={titleRef} className="text-3xl font-bold mb-4 text-center">
+                AI Chat Assistant
+              </h1>
+              {messages.length === 0 && (
+                <div className="text-center text-gray-400">
+                  Start a conversation by typing below...
+                </div>
+              )}
+              {messages.map((msg, index) => (
+                <div
+                  key={index}
+                  className={`flex ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  } mb-4`}
+                >
+                  <div
+                    className={`max-w-[70%] p-4 rounded-lg shadow-md ${
+                      msg.role === "user"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-700 text-gray-200"
+                    }`}
+                  >
+                    <ReactMarkdown>{msg.text || "Error: No text available"}</ReactMarkdown>
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex justify-start mb-4">
+                  <div className="bg-gray-700 p-4 rounded-lg shadow-md max-w-[70%]">
+                    <span className="text-gray-400 animate-pulse">Thinking...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+
+          {/* Input Area */}
+          <div className="sticky bottom-0 p-6 bg-gray-900">
+            <div className="max-w-3xl mx-auto flex items-center bg-gray-800 rounded-full shadow-lg p-2">
+              <button
+                onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+                className="p-2 text-gray-400 hover:text-white lg:hidden"
+              >
+                ☰
+              </button>
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={handleInput}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask me anything..."
+                className="flex-1 bg-transparent text-white p-3 outline-none placeholder-gray-400"
+                disabled={loading}
+              />
+              <button
+                onClick={handleSend}
+                className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:bg-gray-500"
+                disabled={loading}
+              >
+                ➤
+              </button>
+            </div>
+            {error && <div className="text-red-500 text-center mt-2">{error}</div>}
+          </div>
+
+          {/* New Chat Button */}
+          <button
+            onClick={startNewChat}
+            className="fixed bottom-20 right-6 p-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition shadow-lg z-10"
+          >
+            New Chat
+          </button>
+        </div>
       </div>
     </div>
   );
