@@ -51,7 +51,7 @@ export const Home = () => {
         {/* Background with animation */}
         <div
           ref={heroRef}
-          className="absolute inset-0 bg-hero-pattern bg-cover bg-no-repeat bg-center z-0 blur"
+          className="absolute h-full  inset-0 bg-hero-pattern bg-cover bg-no-repeat bg-center z-0 blur"
           style={{
             maskImage:
               "linear-gradient(to bottom, black 90%, transparent 100%)",

@@ -16,6 +16,9 @@ export const ImageToText = () => {
   const rightSection = useRef(null);
   const textRef = useRef(null);
   const dropZoneRef = useRef(null);
+  const imagePreviewRef = useRef(null);
+  const extractButtonRef = useRef(null);
+  const extractedTextRef = useRef(null);
 
   useEffect(() => {
     gsap.fromTo(
@@ -35,11 +38,15 @@ export const ImageToText = () => {
     if (file) {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
-      gsap.fromTo(
-        dropZoneRef.current,
-        { scale: 1.2, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.7)" }
-      );
+
+      // Hiệu ứng scale ảnh preview
+      setTimeout(() => {
+        gsap.fromTo(
+          imagePreviewRef.current,
+          { scale: 0.8, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.7)" }
+        );
+      }, 100);
     }
   };
 
@@ -59,6 +66,15 @@ export const ImageToText = () => {
     if (file) {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
+
+      // Hiệu ứng khi ảnh được thả vào
+      setTimeout(() => {
+        gsap.fromTo(
+          imagePreviewRef.current,
+          { scale: 0.8, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.7)" }
+        );
+      }, 100);
     }
   };
 
@@ -69,6 +85,14 @@ export const ImageToText = () => {
     }
     setLoading(true);
     setExtractedText("");
+
+    // Hiệu ứng shake khi click button Extract Text
+    gsap.to(extractButtonRef.current, {
+      x: -5,
+      repeat: 5,
+      yoyo: true,
+      duration: 0.1,
+    });
 
     try {
       const formData = new FormData();
@@ -83,6 +107,15 @@ export const ImageToText = () => {
       } else {
         const textData = response.data.map((item) => item.text).join(" ");
         setExtractedText(textData);
+
+        // Hiệu ứng xuất hiện dần cho văn bản trích xuất
+        setTimeout(() => {
+          gsap.fromTo(
+            extractedTextRef.current,
+            { opacity: 0, y: 10 },
+            { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
+          );
+        }, 200);
       }
       toast.success("Successfully extracted text!");
     } catch (err) {
@@ -131,13 +164,6 @@ export const ImageToText = () => {
               className="cursor-pointer bg-gray-800 hover:bg-gray-700 p-3 rounded-lg shadow-md border border-gray-700 transition duration-200 flex flex-col items-center gap-2 text-sm text-center"
             >
               <span>Drag & Drop or Click to Upload</span>
-              <input
-                id="fileUpload"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
               <span className="px-4 py-2 bg-gray-700 text-white rounded-md">
                 Choose a file
               </span>
@@ -146,6 +172,7 @@ export const ImageToText = () => {
 
           {imagePreview && (
             <img
+              ref={imagePreviewRef}
               src={imagePreview}
               alt="Uploaded Preview"
               className="w-full max-h-80 object-contain rounded-lg border border-gray-700 mt-3"
@@ -153,6 +180,7 @@ export const ImageToText = () => {
           )}
 
           <button
+            ref={extractButtonRef}
             onClick={extractText}
             disabled={loading}
             className={`px-6 py-3 text-white rounded-lg text-base font-medium shadow-md transition duration-200 ${
@@ -168,15 +196,12 @@ export const ImageToText = () => {
         {/* Right Section - Extracted Text */}
         <div
           ref={rightSection}
-          className="flex-1 flex flex-col justify-center p-6 bg-gray-800 rounded-lg shadow-md"
+          className="flex-1 p-6 bg-gray-800 rounded-lg shadow-md"
         >
           {loading ? (
-            <div className="flex flex-col justify-center items-center">
-              <div className="w-12 h-12 border-4 border-t-white rounded-full animate-spin"></div>
-              <p className="mt-3">Extracting text...</p>
-            </div>
+            <p className="text-center">Extracting text...</p>
           ) : extractedText ? (
-            <div className="w-full text-left">
+            <div ref={extractedTextRef} className="w-full text-left">
               <h3 className="text-lg font-semibold mb-2">Extracted Text:</h3>
               <textarea
                 ref={textRef}
@@ -186,7 +211,7 @@ export const ImageToText = () => {
               />
               <button
                 onClick={copyToClipboard}
-                className="mt-3 px-5 py-2 bg-[#6c63ff] hover:bg-[#5753ff] text-white rounded-lg shadow-md active:scale-95 transition duration-200"
+                className="mt-3 px-5 py-2 bg-[#6c63ff] text-white rounded-lg"
               >
                 Copy Text
               </button>

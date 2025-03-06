@@ -49,9 +49,13 @@ const TextToSpeech = () => {
       <Navbar />
 
       {/* Main Content */}
-      <div className="flex-1 pt-16 p-6 flex items-center justify-center"> {/* Thêm pt-16 để tránh overlap với Navbar */}
+      <div className="flex-1 w-full flex items-center justify-center">
+        {" "}
+        {/* Thêm pt-16 để tránh overlap với Navbar */}
         <div className="w-full max-w-2xl">
-          <h1 className="text-4xl font-bold text-center mb-10">Generate Music</h1>
+          <h1 className="text-4xl font-bold text-center mb-10">
+            Generate Music
+          </h1>
           {/* Input Section */}
           <textarea
             value={text}
@@ -59,7 +63,9 @@ const TextToSpeech = () => {
             placeholder="Enter text here..."
             className="w-full h-32 bg-gray-800 text-white p-4 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
           ></textarea>
-          {error && <div className="text-red-500 mt-2 text-center">{error}</div>}
+          {error && (
+            <div className="text-red-500 mt-2 text-center">{error}</div>
+          )}
 
           {/* Buttons */}
           <div className="flex justify-center gap-4 mt-6">
