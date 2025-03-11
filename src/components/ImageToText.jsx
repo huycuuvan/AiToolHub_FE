@@ -175,7 +175,7 @@ export const ImageToText = () => {
               ref={imagePreviewRef}
               src={imagePreview}
               alt="Uploaded Preview"
-              className="w-full max-h-80 object-contain rounded-lg border border-gray-700 mt-3"
+              className="max-w-full max-h-80 object-contain rounded-lg border border-gray-700 mt-3"
             />
           )}
 

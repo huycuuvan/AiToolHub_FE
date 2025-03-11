@@ -26,8 +26,14 @@ function TextAssistance() {
   }, []);
 
   useEffect(() => {
-    const storedHistories = JSON.parse(localStorage.getItem("chatHistories") || "[]");
+    const storedHistories = JSON.parse(
+      localStorage.getItem("chatHistories") || "[]"
+    );
     setChatHistories(storedHistories);
+    if (storedHistories.length > 0) {
+      setActiveHistoryIndex(0);
+      setMessages(storedHistories[0].messages);
+    }
   }, []);
 
   useEffect(() => {
@@ -51,19 +57,23 @@ function TextAssistance() {
     try {
       const response = await axios.post(
         "http://localhost:8080/api/tools/chatbot",
-        { message: input }
+        { messages: input }
       );
 
       let aiText;
       if (typeof response.data === "string") {
         if (response.data.startsWith("{")) {
           const jsonResponse = JSON.parse(response.data);
-          aiText = jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text || "No response text";
+          aiText =
+            jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text ||
+            "No response text";
         } else {
           aiText = response.data;
         }
       } else if (typeof response.data === "object" && response.data !== null) {
-        aiText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "No response text";
+        aiText =
+          response.data.candidates?.[0]?.content?.parts?.[0]?.text ||
+          "No response text";
       } else {
         aiText = "Unexpected response format";
       }
@@ -72,12 +82,16 @@ function TextAssistance() {
       const finalMessages = [...updatedMessages, aiResponse];
       setMessages(finalMessages);
 
-      const conversationTitle = input.substring(0, 50) + (input.length > 50 ? "..." : "");
+      const conversationTitle =
+        input.substring(0, 50) + (input.length > 50 ? "..." : "");
       const updatedHistories = [...chatHistories];
       if (activeHistoryIndex !== null && updatedHistories[activeHistoryIndex]) {
         updatedHistories[activeHistoryIndex].messages = finalMessages;
       } else {
-        updatedHistories.push({ title: conversationTitle, messages: finalMessages });
+        updatedHistories.push({
+          title: conversationTitle,
+          messages: finalMessages,
+        });
         setActiveHistoryIndex(updatedHistories.length - 1);
       }
 
@@ -96,7 +110,7 @@ function TextAssistance() {
 
   const handleHistorySelect = (index) => {
     setActiveHistoryIndex(index);
-    setMessages(chatHistories[index].messages);
+    setMessages(chatHistories[index]?.messages || []);
     setIsHistoryOpen(false);
   };
 
@@ -118,8 +132,7 @@ function TextAssistance() {
       <Navbar />
 
       {/* Main Layout */}
-      <div className="flex flex-1 pt-16"> {/* pt-16 để tránh overlap với Navbar */}
-        {/* Fixed Chat History Sidebar */}
+      <div className="flex flex-1 pt-16">
         <div
           className={`fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] bg-gray-800 z-20 transform ${
             isHistoryOpen ? "translate-x-0" : "-translate-x-full"
@@ -143,7 +156,9 @@ function TextAssistance() {
                   key={index}
                   onClick={() => handleHistorySelect(index)}
                   className={`w-full text-left p-3 rounded-lg ${
-                    activeHistoryIndex === index ? "bg-blue-600" : "bg-gray-700 hover:bg-gray-600"
+                    activeHistoryIndex === index
+                      ? "bg-blue-600"
+                      : "bg-gray-700 hover:bg-gray-600"
                   } transition-colors`}
                 >
                   {history.title}
@@ -160,12 +175,16 @@ function TextAssistance() {
             </button>
           </div>
         </div>
-
         {/* Chat Content */}
-        <div className="flex-1 flex flex-col ml-0 lg:ml-64"> {/* ml-64 để tránh overlap sidebar */}
+        <div className="flex-1 flex flex-col ml-0 lg:ml-64">
+          {" "}
+          {/* ml-64 để tránh overlap sidebar */}
           <div className="flex-1 p-6 overflow-y-auto">
             <div className="max-w-3xl mx-auto">
-              <h1 ref={titleRef} className="text-3xl font-bold mb-4 text-center">
+              <h1
+                ref={titleRef}
+                className="text-3xl font-bold mb-4 text-center"
+              >
                 AI Chat Assistant
               </h1>
               {messages.length === 0 && (
@@ -187,21 +206,24 @@ function TextAssistance() {
                         : "bg-gray-700 text-gray-200"
                     }`}
                   >
-                    <ReactMarkdown>{msg.text || "Error: No text available"}</ReactMarkdown>
+                    <ReactMarkdown>
+                      {msg.text || "Error: No text available"}
+                    </ReactMarkdown>
                   </div>
                 </div>
               ))}
               {loading && (
                 <div className="flex justify-start mb-4">
                   <div className="bg-gray-700 p-4 rounded-lg shadow-md max-w-[70%]">
-                    <span className="text-gray-400 animate-pulse">Thinking...</span>
+                    <span className="text-gray-400 animate-pulse">
+                      Thinking...
+                    </span>
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
           </div>
-
           {/* Input Area */}
           <div className="sticky bottom-0 p-6 bg-gray-900">
             <div className="max-w-3xl mx-auto flex items-center bg-gray-800 rounded-full shadow-lg p-2">
@@ -229,9 +251,10 @@ function TextAssistance() {
                 ➤
               </button>
             </div>
-            {error && <div className="text-red-500 text-center mt-2">{error}</div>}
+            {error && (
+              <div className="text-red-500 text-center mt-2">{error}</div>
+            )}
           </div>
-
           {/* New Chat Button */}
           <button
             onClick={startNewChat}
