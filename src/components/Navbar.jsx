@@ -19,7 +19,7 @@ export const Navbar = () => {
   }, []);
 
   return (
-    <header className=" top-0 left-0 w-full py-5 sm:px-10 px-5 flex justify-between items-center bg-transparent z-30 ">
+    <header className=" fixed top-0 left-0 w-full py-5 sm:px-10 px-5 flex justify-between items-center bg-transparent z-30 ">
       <nav className="flex w-full max-w-screen-xl mx-auto">
         <Link to="/">
           <p className="logo-title text-2xl font-bold text-white">
