@@ -46,64 +46,51 @@ function TextAssistance() {
 
   const handleSend = async () => {
     if (!input.trim()) return;
-
+  
     const userMessage = { role: "user", text: input };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput("");
     setLoading(true);
     setError(null);
-
+  
     try {
-      const response = await axios.post(
-        "http://localhost:8080/api/tools/chatbot",
-        { messages: input }
-      );
-
+      // ✅ Correct API request format
+      const response = await axios.post("http://localhost:8080/api/tools/chatbot", {
+        messages: updatedMessages, // ✅ Send an array of messages
+      });
+  
+      // ✅ Correct API response handling
       let aiText;
-      if (typeof response.data === "string") {
-        if (response.data.startsWith("{")) {
-          const jsonResponse = JSON.parse(response.data);
-          aiText =
-            jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text ||
-            "No response text";
-        } else {
-          aiText = response.data;
-        }
-      } else if (typeof response.data === "object" && response.data !== null) {
-        aiText =
-          response.data.candidates?.[0]?.content?.parts?.[0]?.text ||
-          "No response text";
+      if (response.data && typeof response.data === "object") {
+        aiText = response.data.extractedText || "No response from AI"; // Adjust key based on backend
       } else {
         aiText = "Unexpected response format";
       }
-
-      const aiResponse = { role: "model", text: aiText }; // Sử dụng "model" cho Gemini
+  
+      const aiResponse = { role: "model", text: aiText };
       const finalMessages = [...updatedMessages, aiResponse];
       setMessages(finalMessages);
-
-      const conversationTitle =
-        input.substring(0, 50) + (input.length > 50 ? "..." : "");
+  
+      // ✅ Save to chat history
+      const conversationTitle = input.substring(0, 50) + (input.length > 50 ? "..." : "");
       const updatedHistories = [...chatHistories];
+  
       if (activeHistoryIndex !== null && updatedHistories[activeHistoryIndex]) {
         updatedHistories[activeHistoryIndex].messages = finalMessages;
       } else {
-        updatedHistories.push({
-          title: conversationTitle,
-          messages: finalMessages,
-        });
+        updatedHistories.push({ title: conversationTitle, messages: finalMessages });
         setActiveHistoryIndex(updatedHistories.length - 1);
       }
-
+  
       setChatHistories(updatedHistories);
       localStorage.setItem("chatHistories", JSON.stringify(updatedHistories));
     } catch (err) {
-      setError("Lỗi khi gọi API: " + (err.response?.data || err.message));
+      setError("Error calling AI: " + (err.response?.data || err.message));
     } finally {
       setLoading(false);
     }
   };
-
   const handleKeyPress = (e) => {
     if (e.key === "Enter") handleSend();
   };

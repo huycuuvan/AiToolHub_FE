@@ -102,11 +102,11 @@ export const ImageToText = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (!response.data || response.data.length === 0) {
-        setExtractedText("No text extracted.");
+      if (response.data?.extractedText) {
+        setExtractedText(response.data.extractedText); // ✅ Correctly handles JSON
       } else {
-        const textData = response.data.map((item) => item.text).join(" ");
-        setExtractedText(textData);
+        setExtractedText("No text extracted.");
+        
 
         // Hiệu ứng xuất hiện dần cho văn bản trích xuất
         setTimeout(() => {
