@@ -114,10 +114,32 @@ function TextAssistance() {
   };
 
   const handleClearHistory = () => {
-    localStorage.removeItem("chatHistories");
-    setChatHistories([]);
-    setMessages([]);
-    setActiveHistoryIndex(null);
+    // Hiển thị hộp thoại xác nhận
+    if (activeHistoryIndex !== null && chatHistories.length > 0) {
+      const confirmDelete = window.confirm(
+        `Do you want to delete this history: "${chatHistories[activeHistoryIndex].title}"?`
+      );
+      if (confirmDelete) {
+        const updatedHistories = chatHistories.filter(
+          (_, index) => index !== activeHistoryIndex
+        );
+        setChatHistories(updatedHistories);
+        localStorage.setItem("chatHistories", JSON.stringify(updatedHistories));
+
+        // Cập nhật activeHistoryIndex nếu cần
+        if (updatedHistories.length === 0) {
+          setActiveHistoryIndex(null);
+          setMessages([]);
+        } else if (activeHistoryIndex >= updatedHistories.length) {
+          setActiveHistoryIndex(updatedHistories.length - 1);
+          setMessages(updatedHistories[updatedHistories.length - 1].messages);
+        } else {
+          setMessages(updatedHistories[activeHistoryIndex].messages);
+        }
+      }
+    } else {
+      alert("No history selected to delete!");
+    }
   };
 
   const startNewChat = () => {
@@ -190,8 +212,8 @@ function TextAssistance() {
                         }
                         className={`w-full text-left p-3 rounded-lg transition-colors ${
                           activeHistoryIndex === history.originalIndex
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                            ? "bg-gray-700 text-white-200 hover:bg-gray-600"
+                            : "bg-blue-600 text-white"
                         }`}
                       >
                         {history.title}
@@ -239,7 +261,7 @@ function TextAssistance() {
                   <div
                     className={`max-w-[70%] p-4 rounded-lg shadow-md select-text break-words ${
                       msg.role === "user"
-                        ? "bg-blue-600 text-white"
+                        ? "bg-gray-800 text-white"
                         : "bg-gray-700 text-white"
                     }`}
                   >
