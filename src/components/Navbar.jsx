@@ -48,9 +48,9 @@ export const Navbar = () => {
             Generate Image
           </Link>
           <Link
-            to="/text-to-speech"
+            to="/text-to-music"
             className={`px-5 text-xl cursor-pointer transition-all ${
-              location.pathname === "/text-to-speech"
+              location.pathname === "/text-to-music"
                 ? "text-white font-bold"
                 : "text-gray-200 hover:text-white"
             }`}

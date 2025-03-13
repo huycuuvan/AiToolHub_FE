@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Navbar } from "./Navbar";
 
-const TextToSpeech = () => {
+const TextToMusic = () => {
   const [text, setText] = useState(""); // Text input
   const [error, setError] = useState(""); // Error state
   const [loading, setLoading] = useState(false); // Loading state
@@ -18,10 +18,10 @@ const TextToSpeech = () => {
 
     try {
       const response = await fetch(
-        "https://api-inference.huggingface.co/models/facebook/musicgen-small",
+        "https://api-inference.huggingface.co/models/facebook/musicgen-medium",
         {
           headers: {
-            Authorization: "Bearer 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",
+            Authorization: "Bearer",
             "Content-Type": "application/json",
           },
           method: "POST",
@@ -78,7 +78,7 @@ const TextToSpeech = () => {
               }`}
               disabled={loading}
             >
-              {loading ? "Converting..." : "Convert to Speech"}
+              {loading ? "Converting..." : "Convert to Music"}
             </button>
             <button
               onClick={() => {
@@ -106,4 +106,4 @@ const TextToSpeech = () => {
   );
 };
 
-export default TextToSpeech;
+export default TextToMusic;
