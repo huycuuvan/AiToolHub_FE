@@ -43,8 +43,8 @@ export const ImageToText = () => {
       setTimeout(() => {
         gsap.fromTo(
           imagePreviewRef.current,
-          { scale: 0.8, opacity: 0 },
-          { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.7)" }
+          { scale: 1, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, ease: "power2.out" }
         );
       }, 100);
     }
@@ -136,47 +136,66 @@ export const ImageToText = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-black via-gray-700 to-black text-white min-h-screen flex flex-col items-center">
+    <div className="bg-gradient-to-br from-black via-gray-700 to-black text-white min-h-screen flex justify-center items-center">
       <Navbar />
-      <div className="flex flex-col md:flex-row w-[90%] max-w-[1200px] rounded-2xl shadow-lg overflow-hidden my-8 bg-gray-900 p-6 gap-6 absolute top-[15%]">
+      <div className="flex flex-col md:flex-row items-center justify-center rounded-2xl shadow-lg bg-gray-900 p-6 gap-6 w-3/4 max-w-4xl">
         {/* Left Section - Upload Image */}
         <div ref={leftSection} className="flex-1 p-8 flex flex-col gap-6">
-          <h3 className="text-lg font-semibold">Upload an Image</h3>
+          <h3 className="text-lg font-semibold text-center md:text-left">
+            Upload an Image
+          </h3>
 
-          <div
-            ref={dropZoneRef}
-            className={`cursor-pointer bg-gray-800 p-6 rounded-lg shadow-md border-2 border-dashed transition duration-200 text-center ${
-              dragging ? "border-[#6c63ff] scale-105" : "border-gray-700"
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-              id="fileUpload"
-            />
-            <label
-              htmlFor="fileUpload"
-              className="cursor-pointer bg-gray-800 hover:bg-gray-700 p-3 rounded-lg shadow-md border border-gray-700 transition duration-200 flex flex-col items-center gap-2 text-sm text-center"
+          {imagePreview ? (
+            <>
+              <img
+                ref={imagePreviewRef}
+                src={imagePreview}
+                alt="Uploaded Preview"
+                className="w-full max-h-50 object-cover rounded-lg border border-gray-700 mt-3"
+              />
+
+              {/* Nút chọn file mới ngay bên dưới ảnh */}
+              <label
+                htmlFor="fileUpload"
+                className="cursor-pointer mt-3 bg-gray-700 hover:bg-gray-600 p-3 rounded-lg shadow-md border border-gray-600 transition duration-200 flex items-center justify-center text-sm text-white"
+              >
+                Choose Another File
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                id="fileUpload"
+              />
+            </>
+          ) : (
+            <div
+              ref={dropZoneRef}
+              className={`cursor-pointer bg-gray-800 p-6 rounded-lg shadow-md border-2 border-dashed transition duration-200 text-center ${
+                dragging ? "border-[#6c63ff] scale-105" : "border-gray-700"
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
             >
-              <span>Drag & Drop or Click to Upload</span>
-              <span className="px-4 py-2 bg-gray-700 text-white rounded-md">
-                Choose a file
-              </span>
-            </label>
-          </div>
-
-          {imagePreview && (
-            <img
-              ref={imagePreviewRef}
-              src={imagePreview}
-              alt="Uploaded Preview"
-              className="max-w-full max-h-80 object-contain rounded-lg border border-gray-700 mt-3"
-            />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                id="fileUpload"
+              />
+              <label
+                htmlFor="fileUpload"
+                className="cursor-pointer bg-gray-800 hover:bg-gray-700 p-3 rounded-lg shadow-md border border-gray-700 transition duration-200 flex flex-col items-center gap-2 text-sm text-center"
+              >
+                <span>Drag & Drop or Click to Upload</span>
+                <span className="px-4 py-2 bg-gray-700 text-white rounded-md">
+                  Choose a file
+                </span>
+              </label>
+            </div>
           )}
 
           <button

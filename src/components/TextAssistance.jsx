@@ -26,9 +26,11 @@ function TextAssistance() {
   }, []);
 
   useEffect(() => {
-    const storedHistories = JSON.parse(localStorage.getItem("chatHistories") || "[]");
+    const storedHistories = JSON.parse(
+      localStorage.getItem("chatHistories") || "[]"
+    );
     // Thêm timestamp nếu chưa có (để hỗ trợ group by date)
-    const updatedHistories = storedHistories.map(history => ({
+    const updatedHistories = storedHistories.map((history) => ({
       ...history,
       timestamp: history.timestamp || new Date().toISOString(), // Thêm timestamp mặc định nếu chưa có
     }));
@@ -58,9 +60,12 @@ function TextAssistance() {
     setError(null);
 
     try {
-      const response = await axios.post("http://localhost:8080/api/tools/chatbot", {
-        messages: updatedMessages,
-      });
+      const response = await axios.post(
+        "http://localhost:8080/api/tools/chatbot",
+        {
+          messages: updatedMessages,
+        }
+      );
 
       let aiText;
       if (response.data && typeof response.data === "object") {
@@ -73,7 +78,8 @@ function TextAssistance() {
       const finalMessages = [...updatedMessages, aiResponse];
       setMessages(finalMessages);
 
-      const conversationTitle = input.substring(0, 50) + (input.length > 50 ? "..." : "");
+      const conversationTitle =
+        input.substring(0, 50) + (input.length > 50 ? "..." : "");
       const updatedHistories = [...chatHistories];
 
       if (activeHistoryIndex !== null && updatedHistories[activeHistoryIndex]) {
@@ -143,20 +149,20 @@ function TextAssistance() {
   const groupedHistories = groupHistoriesByDate();
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-      {/* Fixed Navbar */}
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-700 to-black text-white flex flex-col">
       <Navbar />
 
-      {/* Main Layout */}
-      <div className="flex flex-1 pt-16">
+      <div className="flex flex-1 pt-16 ">
         {/* Fixed Chat History Sidebar */}
         <div
-          className={`fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] bg-gray-800 z-20 transform ${
-            isHistoryOpen ? "translate-x-0" : "-translate-x-full"
-          } transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-lg`}
+          className={`fixed top-16 left-0 w-[18rem] md:w-72 lg:w-80 h-[calc(100vh-4rem)] 
+  bg-gradient-to-r from-black via-gray-800 to-transparent z-20 transform 
+  ${isHistoryOpen ? "translate-x-0" : "-translate-x-full"} 
+  transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-lg border-r border-gray-700`}
         >
-          <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Chat History</h2>
+          {/* Header Sidebar */}
+          <div className="p-4 flex justify-between items-center border-b border-gray-700">
+            <h2 className="text-lg font-semibold text-white">Chat History</h2>
             <button
               onClick={() => setIsHistoryOpen(false)}
               className="lg:hidden text-gray-400 hover:text-white"
@@ -164,18 +170,24 @@ function TextAssistance() {
               ✕
             </button>
           </div>
-          <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-12rem)]">
+
+          {/* Nội dung lịch sử chat */}
+          <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-5rem)]">
             {chatHistories.length === 0 ? (
               <p className="text-gray-400 text-center">No history yet</p>
             ) : (
               Object.keys(groupedHistories).map((date) => (
                 <div key={date} className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-400 mb-2">{date}</h3>
+                  <h3 className="text-sm font-semibold text-gray-400 mb-2">
+                    {date}
+                  </h3>
                   <div className="space-y-2">
                     {groupedHistories[date].map((history) => (
                       <button
                         key={history.originalIndex}
-                        onClick={() => handleHistorySelect(history.originalIndex)}
+                        onClick={() =>
+                          handleHistorySelect(history.originalIndex)
+                        }
                         className={`w-full text-left p-3 rounded-lg transition-colors ${
                           activeHistoryIndex === history.originalIndex
                             ? "bg-blue-600 text-white"
@@ -190,10 +202,12 @@ function TextAssistance() {
               ))
             )}
           </div>
-          <div className="absolute bottom-0 w-full p-4 border-t border-gray-700">
+
+          {/* Nút xóa lịch sử */}
+          <div className="absolute bottom-0 w-full p-4 border-t border-gray-700 bg-gray-900/60 backdrop-blur-lg">
             <button
               onClick={handleClearHistory}
-              className="w-full p-2 bg-red-600 rounded-lg hover:bg-red-700 transition text-white font-medium"
+              className="w-full p-3 bg-red-600 rounded-lg hover:bg-red-700 transition text-white font-medium"
             >
               Clear History
             </button>
@@ -204,7 +218,10 @@ function TextAssistance() {
         <div className="flex-1 flex flex-col ml-0 lg:ml-64">
           <div className="flex-1 p-6 overflow-y-auto">
             <div className="max-w-3xl mx-auto">
-              <h1 ref={titleRef} className="text-3xl font-bold mb-6 text-center">
+              <h1
+                ref={titleRef}
+                className="text-3xl font-bold mb-6 text-center"
+              >
                 AI Chat Assistant
               </h1>
               {messages.length === 0 && (
@@ -226,14 +243,18 @@ function TextAssistance() {
                         : "bg-gray-700 text-white"
                     }`}
                   >
-                    <ReactMarkdown>{msg.text || "Error: No text available"}</ReactMarkdown>
+                    <ReactMarkdown>
+                      {msg.text || "Error: No text available"}
+                    </ReactMarkdown>
                   </div>
                 </div>
               ))}
               {loading && (
                 <div className="flex justify-start mb-4">
                   <div className="bg-gray-700 p-4 rounded-lg shadow-md max-w-[70%]">
-                    <span className="text-gray-400 animate-pulse">Thinking...</span>
+                    <span className="text-gray-400 animate-pulse">
+                      Thinking...
+                    </span>
                   </div>
                 </div>
               )}
@@ -242,7 +263,7 @@ function TextAssistance() {
           </div>
 
           {/* Input Area */}
-          <div className="sticky bottom-0 p-6 bg-gray-900">
+          <div className="sticky bottom-0 p-6 bg-transparent">
             <div className="max-w-3xl mx-auto flex items-center bg-gray-800 rounded-full shadow-lg p-2">
               <button
                 onClick={() => setIsHistoryOpen(!isHistoryOpen)}
@@ -268,7 +289,9 @@ function TextAssistance() {
                 ➤
               </button>
             </div>
-            {error && <div className="text-red-500 text-center mt-2">{error}</div>}
+            {error && (
+              <div className="text-red-500 text-center mt-2">{error}</div>
+            )}
           </div>
 
           {/* New Chat Button */}
