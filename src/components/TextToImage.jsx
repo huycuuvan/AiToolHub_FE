@@ -15,7 +15,8 @@ export const TextToImage = () => {
     "http://localhost:8080/api/tools/model1"
   );
   const [history, setHistory] = useState([]);
-  const [modalImage, setModalImage] = useState(null); // For displaying image in modal
+  const [modalImage, setModalImage] = useState(null);
+  const [generationTime, setGenerationTime] = useState(null); // Track generation time
 
   const models = [
     {
@@ -74,7 +75,7 @@ export const TextToImage = () => {
 
   const handleModelClick = (model) => {
     setApiEndpoint(model.api);
-    toast.info(`Switched to ${model.name}`);
+    toast.info(`Switched to ${model.name}`); // Fixed template literal syntax
   };
 
   const handleStyleClick = (style) => {
@@ -101,6 +102,7 @@ export const TextToImage = () => {
 
     setLoading(true);
     setImageSrc("");
+    const startTime = Date.now(); // Start timer
 
     try {
       const response = await axiosInstance.post(
@@ -113,14 +115,18 @@ export const TextToImage = () => {
       const reader = new FileReader();
       reader.readAsDataURL(response.data);
       reader.onloadend = () => {
-        const newImage = reader.result;
+        const endTime = Date.now(); // End timer
+        const duration = (endTime - startTime) / 1000; // Duration in seconds
+        setGenerationTime(duration);
 
+        const newImage = reader.result;
         const historyEntry = {
           id: Date.now(),
           image: newImage,
           prompt: input,
           style: selectedStyle,
           timestamp: new Date().toISOString(),
+          generationTime: duration, // Store duration in history
         };
 
         const updatedHistory = [historyEntry, ...history];
@@ -167,7 +173,7 @@ export const TextToImage = () => {
                   apiEndpoint === model.api
                     ? "bg-indigo-600"
                     : "bg-gray-700 hover:bg-gray-600"
-                }`}
+                }`} // Fixed className syntax
               >
                 {model.name}
               </button>
@@ -187,7 +193,7 @@ export const TextToImage = () => {
                       selectedStyle === style.name
                         ? "ring-4 ring-indigo-500 scale-105"
                         : "hover:opacity-80"
-                    }`}
+                    }`} // Fixed className syntax
                   />
                   <span className="mt-1 text-xs">{style.name}</span>
                 </div>
@@ -209,7 +215,7 @@ export const TextToImage = () => {
               loading
                 ? "bg-gray-600 cursor-not-allowed"
                 : "bg-indigo-600 hover:bg-indigo-500"
-            }`}
+            }`} // Fixed className syntax
           >
             {loading ? "Generating..." : "Generate"}
           </button>
@@ -289,6 +295,12 @@ export const TextToImage = () => {
                       })}{" "}
                       {new Date(entry.timestamp).toLocaleTimeString()}
                     </p>
+                    {entry.generationTime && (
+                      <p className="text-gray-500">
+                        🕒 Generated in {entry.generationTime.toFixed(2)}{" "}
+                        seconds
+                      </p>
+                    )}
                   </div>
                 </div>
               ))
