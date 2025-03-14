@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import gsap from "gsap";
-import { Navbar } from "./Navbar";
-import axios from "axios";
+import { Navbar } from "../Navbar";
 
 function TextAssistance() {
   const [messages, setMessages] = useState([]);
@@ -60,12 +59,7 @@ function TextAssistance() {
     setError(null);
 
     try {
-      const response = await axios.post(
-        "http://localhost:8080/api/tools/chatbot",
-        {
-          messages: updatedMessages,
-        }
-      );
+      const response = await TextAssistance.callChatbot(input);
 
       let aiText;
       if (response.data && typeof response.data === "object") {

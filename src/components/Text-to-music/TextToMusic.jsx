@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Navbar } from "./Navbar";
+import { useState } from "react";
+import { Navbar } from "../Navbar";
 
 const TextToMusic = () => {
   const [text, setText] = useState(""); // Text input
@@ -15,13 +15,13 @@ const TextToMusic = () => {
     }
     setError(""); // Clear error
     setLoading(true); // Set loading state
-
+    console.log(import.meta.env.HUGGING_FACE);
     try {
       const response = await fetch(
         "https://api-inference.huggingface.co/models/facebook/musicgen-medium",
         {
           headers: {
-            Authorization: "Bearer",
+            Authorization: `Bearer ${import.meta.env.HUGGING_FACE}`,
             "Content-Type": "application/json",
           },
           method: "POST",

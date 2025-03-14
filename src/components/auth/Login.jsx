@@ -1,8 +1,9 @@
 import { GoogleLogin } from "@react-oauth/google";
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router";
-import { AuthContext } from "../context/AuthContext";
+
 import { jwtDecode } from "jwt-decode";
+import { AuthContext } from "../../context/AuthContext";
 
 export const Login = () => {
   const navigate = useNavigate();

@@ -1,15 +1,18 @@
 import { Routes, Route } from "react-router";
 
-import TextAssistance from "./components/TextAssistance";
-import { TextToImage } from "./components/TextToImage";
 import { Home } from "./components/Home";
-import { Login } from "./components/Login";
+
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { AuthProvider } from "./context/AuthContext";
-import TextToMusic from "./components/TextToMusic";
-import ImageToText from "./components/ImageToText";
-import { SignUp } from "./components/SignUp";
+
+import TextToMusic from "./components/Text-to-music/TextToMusic";
+import ImageToText from "./components/Image-to-text/ImageToText";
+
 import { ToastContainer } from "react-toastify";
+import TextToImage from "./components/Text-to-image/TextToImage";
+import TextAssistance from "./components/Text-assis/TextAssistance";
+import { Login } from "./components/auth/Login";
+import { SignUp } from "./components/auth/SignUp";
+import { AuthProvider } from "./context/AuthContext";
 
 const App = () => {
   const clientId =

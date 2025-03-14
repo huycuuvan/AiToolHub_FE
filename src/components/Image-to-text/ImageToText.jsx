@@ -1,6 +1,6 @@
 import gsap from "gsap";
 import { useState, useRef, useEffect } from "react";
-import { Navbar } from "./Navbar";
+import { Navbar } from "../Navbar";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -106,7 +106,6 @@ export const ImageToText = () => {
         setExtractedText(response.data.extractedText); // ✅ Correctly handles JSON
       } else {
         setExtractedText("No text extracted.");
-        
 
         // Hiệu ứng xuất hiện dần cho văn bản trích xuất
         setTimeout(() => {
