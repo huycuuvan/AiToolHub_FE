@@ -38,6 +38,10 @@ export const TextToImage = () => {
     { name: "Fantasy", thumbnail: "assets/images/fantasy.jpg" },
     { name: "Cyberpunk", thumbnail: "assets/images/cyberpunk.png" },
     { name: "Abstract", thumbnail: "assets/images/abstract.jpg" },
+    { name: "Origami", thumbnail: "assets/images/origami-dragon.jpg" },
+    { name: "Pixel Art", thumbnail: "assets/images/pixel-art.jpg" },
+    { name: "Anime", thumbnail: "assets/images/anime.jpg" },
+    { name: "3D", thumbnail: "assets/images/3d.jpg" },
   ];
 
   // Refs for animations

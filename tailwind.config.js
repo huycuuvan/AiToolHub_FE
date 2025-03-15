@@ -20,8 +20,8 @@ export default {
       },
       backgroundImage: {
         "hero-pattern": "url('/assets/images/banner-1.jpg')",
-        "hero-pattern-1": "url('/assets/images/goku-ssb.jpg')",
-        "hero-pattern-2": "url('/assets/images/doraemon.jpg')",
+        "hero-pattern-1": "url('/assets/images/2b.jpg')",
+        "hero-pattern-2": "url('/assets/images/makima.png')",
         "glow-gradient":
           "radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%)",
         "blue-glow-gradient":
