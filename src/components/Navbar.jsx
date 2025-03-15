@@ -1,6 +1,6 @@
-import gsap from "gsap";
-import { Link, useLocation } from "react-router-dom"; // Import useLocation
+import { Link, useLocation } from "react-router-dom";
 import { useEffect, useContext } from "react";
+import gsap from "gsap";
 import { AuthContext } from "../context/AuthContext";
 
 export const Navbar = () => {
@@ -29,51 +29,36 @@ export const Navbar = () => {
         <div className="flex flex-1 justify-center space-x-6 max-sm:hidden">
           <Link
             to="/text-assistance"
-            className={`px-5 text-xl cursor-pointer transition-all ${
-              location.pathname === "/text-assistance"
-                ? "text-white font-bold"
-                : "text-gray-200 hover:text-white"
-            }`}
+            className="px-5 text-xl cursor-pointer transition-all text-gray-200 hover:text-white"
           >
             Text Assistance
           </Link>
           <Link
             to="/text-to-image"
-            className={`px-5 text-xl cursor-pointer transition-all ${
-              location.pathname === "/text-to-image"
-                ? "text-white font-bold"
-                : "text-gray-200 hover:text-white"
-            }`}
+            className="px-5 text-xl cursor-pointer transition-all text-gray-200 hover:text-white"
           >
             Generate Image
           </Link>
           <Link
             to="/text-to-music"
-            className={`px-5 text-xl cursor-pointer transition-all ${
-              location.pathname === "/text-to-music"
-                ? "text-white font-bold"
-                : "text-gray-200 hover:text-white"
-            }`}
+            className="px-5 text-xl cursor-pointer transition-all text-gray-200 hover:text-white"
           >
             Text to Music
           </Link>
           <Link
             to="/image-to-text"
-            className={`px-5 text-xl cursor-pointer transition-all ${
-              location.pathname === "/image-to-text"
-                ? "text-white font-bold"
-                : "text-gray-200 hover:text-white"
-            }`}
+            className="px-5 text-xl cursor-pointer transition-all text-gray-200 hover:text-white"
           >
             Image to Text Converter
           </Link>
         </div>
+
         {user ? (
           <div className="flex items-center gap-4">
             <span className="text-lg text-gray-200">{user.username}</span>
             <button
               onClick={logout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg"
             >
               Logout
             </button>

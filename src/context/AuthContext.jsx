@@ -1,16 +1,25 @@
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // Trạng thái lưu thông tin người dùng
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
+  useEffect(() => {
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+  }, [user]);
 
   const login = (userData) => {
-    setUser(userData); // Cập nhật thông tin người dùng khi đăng nhập
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
   };
 
   const logout = () => {
-    setUser(null); // Xóa thông tin người dùng khi đăng xuất
+    setUser(null);
+    localStorage.removeItem("user");
   };
 
   return (
