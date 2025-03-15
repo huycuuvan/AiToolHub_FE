@@ -43,6 +43,21 @@ export const TextToImage = () => {
     { name: "Anime", thumbnail: "assets/images/anime.jpg" },
     { name: "3D", thumbnail: "assets/images/3d.jpg" },
   ];
+  const negativePrompts = {
+    Default: "distorted",
+    Cartoon: "realistic, photo, ultra detail",
+    Realistic:
+      "unnatural colors, bad skin texture, plastic-like, uncanny valley, cartoon, anime, painting, abstract",
+    Fantasy: "washed out colors, low contrast, lack of depth, bad anatomy",
+    Cyberpunk:
+      "muted colors, boring composition, lack of neon glow, bad reflections",
+    Abstract: "realistic, structured, organized",
+    Origami: " distorted, too detailed",
+    "Pixel Art": "realistic, soft details, high resolution",
+    Anime:
+      "low detail, blurry lines, messy shading, bad anatomy, off-model, extra limbs",
+    "3D": "flat, pixelated, hand-drawn",
+  };
 
   // Refs for animations
   const formRef = useRef(null);
@@ -108,10 +123,13 @@ export const TextToImage = () => {
     setImageSrc("");
     const startTime = Date.now(); // Start timer
 
+    // Get the negative prompt for the selected style
+    const negativePrompt = negativePrompts[selectedStyle] || "";
+
     try {
       const response = await axiosInstance.post(
         apiEndpoint,
-        { input, style: selectedStyle },
+        { input, style: selectedStyle, negativePrompt }, // ✅ Include negativePrompt
         { responseType: "blob" }
       );
 
@@ -129,6 +147,7 @@ export const TextToImage = () => {
           image: newImage,
           prompt: input,
           style: selectedStyle,
+          negativePrompt, // ✅ Store negative prompt in history
           timestamp: new Date().toISOString(),
           generationTime: duration, // Store duration in history
         };
@@ -138,7 +157,7 @@ export const TextToImage = () => {
         localStorage.setItem("imageHistory", JSON.stringify(updatedHistory));
 
         setImageSrc(newImage);
-        toast.success("Image generated successfully!");
+        toast.success("🎨 Image generated successfully!");
 
         setTimeout(() => {
           if (imageRef.current) {
@@ -152,7 +171,7 @@ export const TextToImage = () => {
       };
     } catch (err) {
       console.error("Error generating image:", err);
-      toast.error(err.response?.data?.error || "Error generating image");
+      toast.error(err.response?.data?.error || "⚠️ Error generating image");
     } finally {
       setLoading(false);
     }
