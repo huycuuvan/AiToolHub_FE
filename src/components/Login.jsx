@@ -2,34 +2,42 @@ import { GoogleLogin } from "@react-oauth/google";
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router";
 import { AuthContext } from "../context/AuthContext";
-import { jwtDecode } from "jwt-decode";
 
 export const Login = () => {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
-  const [username, setUsername] = useState(""); // Đổi từ email -> username
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
 
-  const handleGoogleSuccess = (credentialResponse) => {
+  const handleGoogleSuccess = async (credentialResponse) => {
     const token = credentialResponse.credential;
-    const decodedToken = jwtDecode(token);
 
-    console.log("Decoded Token:", decodedToken);
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/google", {
+        method: "GET", // Đúng với route trong backend
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    const userData = {
-      name: decodedToken.name,
-      email: decodedToken.email,
-      picture: decodedToken.picture,
-    };
+      if (!response.ok) throw new Error("Google authentication failed");
 
-    login(userData);
-    navigate("/");
+      const data = await response.text(); // Backend trả về token text
+      login({ token: data }); // Lưu token vào context hoặc localStorage
+      navigate("/");
+    } catch (error) {
+      console.error("Google Login Error:", error);
+      setError("Google login failed");
+    }
   };
 
   const handleGoogleFailure = (error) => {
     console.log("Google Login Failed:", error);
+    setError("Google login failed");
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -37,26 +45,17 @@ export const Login = () => {
     try {
       const response = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
-      const text = await response.text(); // Lấy phản hồi dạng text
-
-      let data;
-      try {
-        data = JSON.parse(text); // Thử parse JSON
-      } catch (error) {
-        data = { message: text }; // Nếu không phải JSON, coi như text
-      }
-
       if (!response.ok) {
+        const data = await response.json();
         throw new Error(data.message || "Login failed");
       }
 
-      login(data);
+      const token = await response.text();
+      login({ token });
       navigate("/");
     } catch (err) {
       setError(err.message);
@@ -80,10 +79,9 @@ export const Login = () => {
               <input
                 type="text"
                 id="username"
-                name="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                className="w-full p-2 rounded text-black"
               />
             </div>
             <div className="mb-5">
@@ -96,23 +94,20 @@ export const Login = () => {
               <input
                 type="password"
                 id="password"
-                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                className="w-full p-2 rounded text-black"
               />
             </div>
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
+              className="w-full bg-indigo-600 text-white py-2 rounded"
             >
               Login
             </button>
           </form>
 
           <div className="mt-6 text-center text-gray-400">Or login with</div>
-
-          {/* Google Login Button */}
           <div className="flex justify-center mt-4">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
@@ -123,10 +118,7 @@ export const Login = () => {
           <div className="mt-6 text-center">
             <p className="text-white">
               Don't have an account?{" "}
-              <a
-                href="/signup"
-                className="text-indigo-400 hover:text-indigo-500 font-bold"
-              >
+              <a href="/signup" className="text-indigo-400">
                 Sign Up
               </a>
             </p>

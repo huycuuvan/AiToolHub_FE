@@ -19,20 +19,18 @@ export const SignUp = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:8080/api/auth/register", {
+      const response = await fetch("http://localhost:8080/api/auth/signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Đăng ký thất bại");
+        const data = await response.json();
+        throw new Error(data.message || "Sign-up failed");
       }
 
-      toast.success("Đăng ký thành công! Hãy đăng nhập.", {
+      toast.success("Sign-up successful! Redirecting to login...", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -52,8 +50,8 @@ export const SignUp = () => {
           <input
             type="text"
             name="username"
-            placeholder="Name"
-            className="w-full p-2 mb-3 rounded"
+            placeholder="Username"
+            className="w-full p-2 mb-3 rounded text-black"
             value={formData.username}
             onChange={handleChange}
             required
@@ -62,7 +60,7 @@ export const SignUp = () => {
             type="email"
             name="email"
             placeholder="Email"
-            className="w-full p-2 mb-3 rounded"
+            className="w-full p-2 mb-3 rounded text-black"
             value={formData.email}
             onChange={handleChange}
             required
@@ -71,14 +69,14 @@ export const SignUp = () => {
             type="password"
             name="password"
             placeholder="Password"
-            className="w-full p-2 mb-3 rounded"
+            className="w-full p-2 mb-3 rounded text-black"
             value={formData.password}
             onChange={handleChange}
             required
           />
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
+            className="w-full bg-blue-600 text-white py-2 rounded"
           >
             Register
           </button>
