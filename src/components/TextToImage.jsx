@@ -17,6 +17,7 @@ export const TextToImage = () => {
   const [history, setHistory] = useState([]);
   const [modalImage, setModalImage] = useState(null);
   const [generationTime, setGenerationTime] = useState(null); // Track generation time
+  const [numInferenceSteps, setNumInferenceSteps] = useState(28); // Default 28
 
   const models = [
     {
@@ -27,8 +28,6 @@ export const TextToImage = () => {
       name: "Stable Diffusion 3.5",
       api: "http://localhost:8080/api/tools/model2",
     },
-    { name: "FLUX-2.0", api: "http://localhost:8080/api/tools/model3" },
-    { name: "FLUX-1.0", api: "http://localhost:8080/api/tools/model4" },
   ];
 
   const styles = [
@@ -50,7 +49,7 @@ export const TextToImage = () => {
     { name: "Steampunk", thumbnail: "assets/images/steampunk.jpg" },
     { name: "Sci-Fi", thumbnail: "assets/images/sci-fi.jpg" },
     { name: "Vaporwave", thumbnail: "assets/images/vaporwave.jpg" },
-    { name: "Comic Book", thumbnail: "assets/images/comicbook.png" },
+    { name: "Comic", thumbnail: "assets/images/comicbook.png" },
     { name: "Psychedelic", thumbnail: "assets/images/Psychedelic.png" },
     { name: "Mythological", thumbnail: "assets/images/Mythological.jpg" },
     { name: "Minimalist", thumbnail: "assets/images/Minimalist.jpg" },
@@ -73,7 +72,6 @@ export const TextToImage = () => {
     Watercolor: "sharp details, high contrast, digital rendering",
     "Oil Painting": "photorealistic, sharp details, digital effects",
     Sketch: "colorful, ultra detail, high resolution, realistic textures",
-    "Neon Noir": "soft colors, washed out, lacks contrast, blurry",
     "Glitch Art": "smooth, clean lines, high detail, natural colors",
     Steampunk: "modern, futuristic, minimalistic, soft details",
     "Sci-Fi": "old, outdated, low-tech, blurry details",
@@ -119,7 +117,7 @@ export const TextToImage = () => {
 
   const handleModelClick = (model) => {
     setApiEndpoint(model.api);
-    toast.info(`Switched to ${model.name}`); // Fixed template literal syntax
+    toast.info(`Switched to ${model.name}`);
   };
 
   const handleStyleClick = (style) => {
@@ -151,12 +149,22 @@ export const TextToImage = () => {
     // Get the negative prompt for the selected style
     const negativePrompt = negativePrompts[selectedStyle] || "";
 
+    // Combine the user input with the selected style
+    const combinedInput =
+      selectedStyle === "Default"
+        ? input
+        : `${input} in ${selectedStyle} style`;
+
     try {
-      const response = await axiosInstance.post(
-        apiEndpoint,
-        { input, style: selectedStyle, negativePrompt }, // ✅ Include negativePrompt
-        { responseType: "blob" }
-      );
+      const payload = {
+        input: combinedInput, // Send the combined input
+        negativePrompt,
+        numInferenceSteps, // Include the selected inference steps
+      };
+
+      const response = await axiosInstance.post(apiEndpoint, payload, {
+        responseType: "blob",
+      });
 
       // Convert Blob to Base64 for persistent storage
       const reader = new FileReader();
@@ -170,9 +178,10 @@ export const TextToImage = () => {
         const historyEntry = {
           id: Date.now(),
           image: newImage,
-          prompt: input,
-          style: selectedStyle,
-          negativePrompt, // ✅ Store negative prompt in history
+          prompt: input, // Store the original user input
+          style: selectedStyle, // Store the selected style for display
+          negativePrompt, // Store negative prompt in history
+          numInferenceSteps, // Store inference steps in history
           timestamp: new Date().toISOString(),
           generationTime: duration, // Store duration in history
         };
@@ -253,29 +262,44 @@ export const TextToImage = () => {
             </div>
           </div>
 
-          <div className="mt-4">
-            {" "}
-            {/* Prompt Input & Button (Fixed at Bottom) */}
-            <div className="mt-4">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Enter your prompt"
-                className="w-full p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-indigo-500 focus:outline-none"
-                rows="2"
+          {/* Inference Steps Slider */}
+          <div className="mt-6">
+            <h3 className="text-xl font-bold">Inference Steps</h3>
+            <div className="mt-2">
+              <input
+                type="range"
+                min="1"
+                max="50"
+                value={numInferenceSteps}
+                onChange={(e) => setNumInferenceSteps(Number(e.target.value))}
+                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
-              <button
-                onClick={query}
-                disabled={loading}
-                className={`w-full mt-4 p-3 rounded-lg font-bold text-lg transition-all ${
-                  loading
-                    ? "bg-gray-600 cursor-not-allowed"
-                    : "bg-indigo-600 hover:bg-indigo-500"
-                }`}
-              >
-                {loading ? "Generating..." : "Generate"}
-              </button>
+              <div className="text-center text-white mt-2">
+                Selected: {numInferenceSteps} steps
+              </div>
             </div>
+          </div>
+
+          {/* Prompt Input & Button (Fixed at Bottom) */}
+          <div className="mt-4">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Enter your prompt"
+              className="w-full p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-indigo-500 focus:outline-none"
+              rows="2"
+            />
+            <button
+              onClick={query}
+              disabled={loading}
+              className={`w-full mt-4 p-3 rounded-lg font-bold text-lg transition-all ${
+                loading
+                  ? "bg-gray-600 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-500"
+              }`}
+            >
+              {loading ? "Generating..." : "Generate"}
+            </button>
           </div>
         </div>
 
@@ -352,6 +376,11 @@ export const TextToImage = () => {
                       <p className="text-gray-500">
                         🕒 Generated in {entry.generationTime.toFixed(2)}{" "}
                         seconds
+                      </p>
+                    )}
+                    {entry.numInferenceSteps && (
+                      <p className="text-gray-500">
+                        🚀 Inference Steps: {entry.numInferenceSteps}
                       </p>
                     )}
                   </div>
