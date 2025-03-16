@@ -41,8 +41,21 @@ export const TextToImage = () => {
     { name: "Origami", thumbnail: "assets/images/origami-dragon.jpg" },
     { name: "Pixel Art", thumbnail: "assets/images/pixel-art.jpg" },
     { name: "Anime", thumbnail: "assets/images/anime.jpg" },
+    { name: "Chibi", thumbnail: "assets/images/chibi.png" },
     { name: "3D", thumbnail: "assets/images/3d.jpg" },
+    { name: "Watercolor", thumbnail: "assets/images/watercolor.jpg" },
+    { name: "Oil Painting", thumbnail: "assets/images/oilpainting.jpg" },
+    { name: "Sketch", thumbnail: "assets/images/sketch.jpg" },
+    { name: "Glitch Art", thumbnail: "assets/images/glitch-art.jpg" },
+    { name: "Steampunk", thumbnail: "assets/images/steampunk.jpg" },
+    { name: "Sci-Fi", thumbnail: "assets/images/sci-fi.jpg" },
+    { name: "Vaporwave", thumbnail: "assets/images/vaporwave.jpg" },
+    { name: "Comic Book", thumbnail: "assets/images/comicbook.png" },
+    { name: "Psychedelic", thumbnail: "assets/images/Psychedelic.png" },
+    { name: "Mythological", thumbnail: "assets/images/Mythological.jpg" },
+    { name: "Minimalist", thumbnail: "assets/images/Minimalist.jpg" },
   ];
+
   const negativePrompts = {
     Default: "distorted",
     Cartoon: "realistic, photo, ultra detail",
@@ -52,11 +65,23 @@ export const TextToImage = () => {
     Cyberpunk:
       "muted colors, boring composition, lack of neon glow, bad reflections",
     Abstract: "realistic, structured, organized",
-    Origami: " distorted, too detailed",
+    Origami: "distorted, too detailed",
     "Pixel Art": "realistic, soft details, high resolution",
     Anime:
       "low detail, blurry lines, messy shading, bad anatomy, off-model, extra limbs",
     "3D": "flat, pixelated, hand-drawn",
+    Watercolor: "sharp details, high contrast, digital rendering",
+    "Oil Painting": "photorealistic, sharp details, digital effects",
+    Sketch: "colorful, ultra detail, high resolution, realistic textures",
+    "Neon Noir": "soft colors, washed out, lacks contrast, blurry",
+    "Glitch Art": "smooth, clean lines, high detail, natural colors",
+    Steampunk: "modern, futuristic, minimalistic, soft details",
+    "Sci-Fi": "old, outdated, low-tech, blurry details",
+    Vaporwave: "sharp contrast, high realism, non-pastel colors",
+    "Comic Book": "photo-realistic, soft edges, pastel colors",
+    Psychedelic: "muted colors, lack of surreal elements, low contrast",
+    Mythological: "modern, sci-fi, cyberpunk, futuristic, digital look",
+    Minimalist: "high detail, complex background, realistic textures",
   };
 
   // Refs for animations
@@ -180,12 +205,13 @@ export const TextToImage = () => {
   return (
     <div className="bg-gradient-to-br from-black via-gray-900 to-black min-h-screen text-white flex flex-col">
       <Navbar />
-      <div className="grid grid-cols-12 gap-6 p-6 pt-10 mt-6 max-w-[1600px] mx-auto w-full">
-        {/* Left Sidebar - Controls */}
+      <div className="grid grid-cols-12 gap-6 p-6 pt-10 mt-6 max-w-[1800px] xl:max-w-[95%] mx-auto w-full">
+        {/* Left Sidebar - Form */}
         <div
           ref={formRef}
-          className="col-span-12 md:col-span-3 bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700"
+          className="col-span-12 md:col-span-4 lg:col-span-3 bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 flex flex-col justify-between"
         >
+          {/* Models Section */}
           <h3 className="text-xl font-bold">Choose a Model</h3>
           <div className="grid grid-cols-1 gap-3 mt-3">
             {models.map((model) => (
@@ -196,59 +222,68 @@ export const TextToImage = () => {
                   apiEndpoint === model.api
                     ? "bg-indigo-600"
                     : "bg-gray-700 hover:bg-gray-600"
-                }`} // Fixed className syntax
+                }`}
               >
                 {model.name}
               </button>
             ))}
           </div>
 
-          <h3 className="text-xl font-bold mt-6">Choose a Style</h3>
-          <div className="mt-3 p-2 border border-gray-700 rounded-lg h-56 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-            <div className="grid grid-cols-3 gap-2">
-              {styles.map((style) => (
-                <div key={style.name} className="flex flex-col items-center">
-                  <img
-                    src={style.thumbnail}
-                    alt={style.name}
-                    onClick={() => handleStyleClick(style)}
-                    className={`w-16 h-16 object-cover rounded-lg cursor-pointer transition-all ${
-                      selectedStyle === style.name
-                        ? "ring-4 ring-indigo-500 scale-105"
-                        : "hover:opacity-80"
-                    }`} // Fixed className syntax
-                  />
-                  <span className="mt-1 text-xs">{style.name}</span>
-                </div>
-              ))}
+          {/* Styles Section (Flexible Height) */}
+          <div className="flex-grow mt-6 min-h-[300px] flex flex-col">
+            <h3 className="text-xl font-bold">Choose a Style</h3>
+            <div className="mt-3 p-2 border border-gray-700 rounded-lg overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 max-h-[250px]">
+              <div className="grid grid-cols-3 gap-3">
+                {styles.map((style) => (
+                  <div key={style.name} className="flex flex-col items-center">
+                    <img
+                      src={style.thumbnail}
+                      alt={style.name}
+                      onClick={() => handleStyleClick(style)}
+                      className={`w-16 h-16 lg:w-20 lg:h-20 object-cover rounded-lg cursor-pointer transition-all ${
+                        selectedStyle === style.name
+                          ? "ring-4 ring-indigo-500 scale-105"
+                          : "hover:opacity-80"
+                      }`}
+                    />
+                    <span className="mt-1 text-xs">{style.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Enter your prompt"
-            className="w-full p-3 mt-4 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-indigo-500 focus:outline-none"
-            rows="3"
-          />
-          <button
-            onClick={query}
-            disabled={loading}
-            className={`w-full mt-4 p-3 rounded-lg font-bold text-lg transition-all ${
-              loading
-                ? "bg-gray-600 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-500"
-            }`} // Fixed className syntax
-          >
-            {loading ? "Generating..." : "Generate"}
-          </button>
+          <div className="mt-4">
+            {" "}
+            {/* Prompt Input & Button (Fixed at Bottom) */}
+            <div className="mt-4">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Enter your prompt"
+                className="w-full p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-indigo-500 focus:outline-none"
+                rows="2"
+              />
+              <button
+                onClick={query}
+                disabled={loading}
+                className={`w-full mt-4 p-3 rounded-lg font-bold text-lg transition-all ${
+                  loading
+                    ? "bg-gray-600 cursor-not-allowed"
+                    : "bg-indigo-600 hover:bg-indigo-500"
+                }`}
+              >
+                {loading ? "Generating..." : "Generate"}
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Center - Generated Image */}
-        <div className="col-span-12 md:col-span-6 flex items-center justify-center">
+        {/* Center - Image Preview */}
+        <div className="col-span-12 md:col-span-5 lg:col-span-6 flex items-center justify-center">
           <div
             ref={imageRef}
-            className="bg-gray-700 p-6 rounded-xl border border-gray-600 w-full max-w-[500px] h-[500px] flex items-center justify-center"
+            className="bg-gray-700 p-8 lg:p-10 rounded-xl border border-gray-600 w-full max-w-[600px] h-[500px] flex items-center justify-center"
           >
             {loading ? (
               <Loader />
@@ -269,25 +304,22 @@ export const TextToImage = () => {
         {/* Right Sidebar - History */}
         <div
           ref={historyRef}
-          className="col-span-12 md:col-span-3 bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700"
+          className="col-span-12 md:col-span-4 lg:col-span-3 bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 flex flex-col h-[90vh]"
         >
           <h3 className="text-xl font-bold mb-3">Generated Images</h3>
-          <div className="space-y-3 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+          <div className="space-y-3 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
             {history.length > 0 ? (
               history.map((entry) => (
                 <div
                   key={entry.id}
                   className="bg-gray-700 rounded-lg p-2 shadow-md hover:shadow-lg transition"
                 >
-                  {/* Image Display with Hover Buttons */}
                   <div className="relative group">
                     <img
                       src={entry.image}
                       alt={`Generated ${entry.id}`}
-                      className="w-full h-[150px] object-cover rounded-lg cursor-pointer transition duration-300 hover:opacity-90"
+                      className="w-full h-[150px] lg:h-[180px] object-cover rounded-lg cursor-pointer transition duration-300 hover:opacity-90"
                     />
-
-                    {/* Hover Buttons (Appear only on Image Hover) */}
                     <div className="absolute inset-0 flex justify-center items-center opacity-0 group-hover:opacity-100 transition duration-300 bg-black/50 rounded-lg">
                       <button
                         onClick={() => setModalImage(entry.image)}
@@ -303,8 +335,6 @@ export const TextToImage = () => {
                       </button>
                     </div>
                   </div>
-
-                  {/* Image Info (Selectable Text) */}
                   <div className="mt-2 text-xs text-gray-300 select-text">
                     <p className="text-white">📝 {entry.prompt}</p>
                     <p className="text-indigo-400">🎨 {entry.style}</p>
