@@ -212,7 +212,7 @@ export const TextToImage = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-black via-gray-900 to-black min-h-screen text-white flex flex-col">
+    <div className="bg-gradient-to-br from-black via-gray-700 to-black min-h-screen text-white flex flex-col">
       <Navbar />
       <div className="grid grid-cols-12 gap-6 p-6 pt-10 mt-6 max-w-[1800px] xl:max-w-[95%] mx-auto w-full">
         {/* Left Sidebar - Form */}

@@ -1,8 +1,9 @@
 import { GoogleLogin } from "@react-oauth/google";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import gsap from "gsap";
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -12,13 +13,11 @@ export const Login = () => {
   const [error, setError] = useState(null);
   const [isGoogleLoading, setGoogleLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  // 🔹 Xử lý đăng nhập bằng Google
+  const heroRef = useRef(null);
   const handleGoogleSuccess = async (credentialResponse) => {
     setGoogleLoading(true);
     try {
       console.log("✅ Google Credential Response:", credentialResponse);
-
       const response = await fetch("http://localhost:8080/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -28,30 +27,54 @@ export const Login = () => {
       if (!response.ok) throw new Error("Google authentication failed");
 
       const responseData = await response.json();
-      console.log("✅ Response from server:", responseData);
-
-      if (!responseData.username) {
-        throw new Error("❌ 'username' field is missing in API response");
-      }
-
       login({ username: responseData.username });
       navigate("/");
     } catch (error) {
-      console.error("❌ Google Login Error:", error);
       toast.error(error.message || "Google login failed. Please try again.");
     } finally {
       setGoogleLoading(false);
     }
   };
+  useEffect(() => {
+    const images = [
+      "bg-hero-pattern",
+      "bg-hero-pattern-1",
+      "bg-hero-pattern-2",
+    ];
+    let currentIndex = 0;
 
-  // 🔹 Xử lý đăng nhập truyền thống
+    const changeBackground = () => {
+      if (heroRef.current) {
+        heroRef.current.classList.remove(images[currentIndex]);
+        currentIndex = (currentIndex + 1) % images.length;
+        heroRef.current.classList.add(images[currentIndex]);
+      }
+    };
+
+    const transitionDuration = 1;
+    const intervalDuration = 5;
+
+    const interval = setInterval(() => {
+      gsap.to(heroRef.current, {
+        opacity: 0,
+        duration: transitionDuration,
+        onComplete: () => {
+          changeBackground();
+          gsap.to(heroRef.current, {
+            opacity: 1,
+            duration: transitionDuration,
+          });
+        },
+      });
+    }, intervalDuration * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
     try {
-      console.log("🔄 Sending login request...");
-
       const response = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: {
@@ -60,84 +83,72 @@ export const Login = () => {
         body: JSON.stringify({ username, password }),
       });
 
-      const text = await response.text(); // Get response as text
-      console.log("📡 Raw API Response:", text); // Debugging step
-
-      let data;
-      try {
-        data = JSON.parse(text); // Try parsing JSON
-      } catch (error) {
-        data = { message: text }; // If not JSON, assume text message
-      }
-
-      if (!response.ok) {
-        throw new Error(data.message || "❌ Login failed");
-      }
-
-      // ✅ Log the entire response to debug
-      console.log("✅ Parsed Response Data:", data);
-
-      // ✅ Check if token is in the response
-      if (!data.token) {
-        throw new Error("❌ No token received from the API!");
-      }
-
-      console.log("🔑 Received Token:", data.token); // This should log the token
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "❌ Login failed");
 
       login(data);
       navigate("/");
     } catch (err) {
-      console.error("❌ Login Error:", err.message);
       setError(err.message);
     }
   };
 
   return (
-    <div className="flex">
-      <div className="w-full h-screen bg-gradient-to-br from-black via-gray-600 to-black flex justify-center items-center">
-        <div className="w-1/2 bg-transparent p-8 rounded-lg shadow-lg">
+    <div className="flex h-screen mix-blend-overlay">
+      {/* Left Side - Slideshow or Background Image */}
+      <div
+        ref={heroRef}
+        className="hidden md:flex w-1/2 bg-hero-pattern bg-cover bg-center box-shadow-lg "
+      >
+        {/* Optional: Overlay */}
+        <div className="w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
+          <h2 className="text-white text-3xl font-bold">
+            Welcome to Our Platform
+          </h2>
+        </div>
+      </div>
+
+      {/* Right Side - Login Form */}
+      <div className="w-full md:w-1/2 flex justify-center items-center bg-gradient-to-br from-black via-gray-700 to-black ">
+        <div className="w-full max-w-md p-8 bg-gray-800 rounded-lg shadow-lg">
           <h1 className="text-4xl font-bold text-white text-center">Login</h1>
           {error && <p className="text-red-500 text-center mt-2">{error}</p>}
 
-          {/* 📝 FORM ĐĂNG NHẬP */}
+          {/* Login Form */}
           <form className="mt-5" onSubmit={handleSubmit}>
             <div className="mb-5">
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-white"
-              >
-                Username
-              </label>
               <input
                 type="text"
                 id="username"
+                placeholder="Username"
                 name="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                className="mt-1 block w-full px-3 py-2 border border-gray-500 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
             </div>
             <div className="mb-5">
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-white"
-              >
-                Password
-              </label>
               <input
                 type="password"
                 id="password"
+                placeholder="Password"
                 name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                className="mt-1 block w-full px-3 py-2 border border-gray-500 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
             </div>
+
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
+              className={`w-full py-2 px-4 text-white font-bold rounded-lg transition duration-300 ease-in-out 
+              ${
+                isLoading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 active:bg-indigo-800"
+              }`}
               disabled={isLoading}
             >
               {isLoading ? "Logging in..." : "Login"}
@@ -146,7 +157,7 @@ export const Login = () => {
 
           <div className="mt-6 text-center text-gray-400">Or login with</div>
 
-          {/* 📝 Đăng nhập bằng Google */}
+          {/* Google Login */}
           <div className="flex justify-center mt-4">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}

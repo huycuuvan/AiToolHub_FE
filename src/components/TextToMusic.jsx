@@ -44,7 +44,7 @@ const TextToMusic = () => {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen text-white bg-gradient-to-br from-black via-gray-900 to-black">
+    <div className="flex flex-col items-center min-h-screen text-white bg-gradient-to-br from-black via-gray-700 to-black">
       {/* Fixed Navbar */}
       <Navbar />
 
@@ -74,12 +74,13 @@ const TextToMusic = () => {
               className={`px-6 py-3 rounded-lg text-white ${
                 loading
                   ? "bg-gray-500 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
+                  : "bg-gray-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md hover:shadow-lg"
               }`}
               disabled={loading}
             >
               {loading ? "Converting..." : "Convert to Music"}
             </button>
+
             <button
               onClick={() => {
                 setText("");
