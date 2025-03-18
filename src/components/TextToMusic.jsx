@@ -18,10 +18,10 @@ const TextToMusic = () => {
 
     try {
       const response = await fetch(
-        "https://api-inference.huggingface.co/models/facebook/musicgen-medium",
+        "https://api-inference.huggingface.co/models/facebook/musicgen-small",
         {
           headers: {
-            Authorization: "Bearer",
+            Authorization: "Bearer dawdasfasfawdawd",
             "Content-Type": "application/json",
           },
           method: "POST",
