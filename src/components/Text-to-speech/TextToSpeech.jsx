@@ -8,7 +8,31 @@ const TextToSpeech = () => {
   const [activeTab, setActiveTab] = useState("settings");
   const [history, setHistory] = useState([]);
   const [input, setInput] = useState("");
-  const [voice, setVoice] = useState("Rachel");
+  // First, add the voice options enum at the top of the file
+  const VOICES = {
+    ADAM: { name: "Adam", id: "pNInz6obpgDQGcFmaJgB" },
+    ALICE: { name: "Alice", id: "Xb7hH8MSUJpSbSDYk0k2" },
+    ANTONI: { name: "Antoni", id: "ErXwobaYiN019PkySvjV" },
+    ARIA: { name: "Aria", id: "ErXwobaYiN019PkySvjV" },
+    ARNOLD: { name: "Arnold", id: "VR6AewLTigWG4xSOukaG" },
+    BILL: { name: "Bill", id: "pqHfZKP75CvOlQylNhV4" },
+    CALLUM: { name: "Callum", id: "N2lVS1w4EtoT3dr4eOWO" },
+    ELLI: { name: "Elli", id: "MF3mGyEYCl7XYWbV9V6O" },
+    EMILY: { name: "Emily", id: "LcfcDJNUP1GQjkzn1xUU" },
+    FREYA: { name: "Freya", id: "jsCqWAovK2LkecY7zXl4" },
+    SARAH: { name: "Sarah", id: "EXAVITQu4vr4xnSDxMaL" },
+    SERENA: { name: "Serena", id: "pMsXgVXv3BLzUgSXRplE" },
+    THOMAS: { name: "Thomas", id: "GBv7mTt0atIp3Br8iCZE" },
+    MICHAEL: { name: "Michael", id: "flq6f7yk4E4fJM5XTYuZ" },
+    ETHAN: { name: "Ethan", id: "g5CIjZEefAph4nQFvHAz" },
+    GEORGE: { name: "George", id: "Yko7PKHZNXotIFUBG7I9" },
+    PAUL: { name: "Paul", id: "5Q0t7uMcjvnagumLfvZi" },
+    GIGI: { name: "Gigi", id: "jBpfuIE2acCO8z3wKNLl" },
+    SANTA_CLAUS: { name: "Santa Claus", id: "knrPHWnBmmDHMoiMeP3l" },
+  };
+
+  // Update the initial voice state to use the first voice
+  const [voice, setVoice] = useState(VOICES.ADAM.name);
   const [speed, setSpeed] = useState(1);
   const [stability, setStability] = useState(0.5);
   const [similarity, setSimilarity] = useState(0.75);
@@ -34,6 +58,20 @@ const TextToSpeech = () => {
     setHistory(getHistory());
   }, []);
 
+  // Update the select element in the settings section
+  <select
+    value={voice}
+    onChange={(e) => setVoice(e.target.value)}
+    className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+  >
+    {Object.values(VOICES).map((voice) => (
+      <option key={voice.id} value={voice.name}>
+        {voice.name}
+      </option>
+    ))}
+  </select>;
+
+  // Update the handleSubmit function to include the voice ID
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) {
@@ -43,6 +81,7 @@ const TextToSpeech = () => {
 
     setLoading(true);
     try {
+      const selectedVoice = Object.values(VOICES).find((v) => v.name === voice);
       const response = await fetch(
         "http://localhost:8080/api/tools/text-to-speech",
         {
@@ -52,7 +91,7 @@ const TextToSpeech = () => {
           },
           body: JSON.stringify({
             input,
-            voice,
+            voice: selectedVoice.name,
           }),
         }
       );
@@ -62,11 +101,12 @@ const TextToSpeech = () => {
       }
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const audio = new Audio(url);
+      const audioUrl = URL.createObjectURL(blob); // Create an audio URL
+      const audio = new Audio(audioUrl);
       audio.play();
 
-      saveToHistory(input, voice);
+      // Save audio URL to history
+      saveToHistory(input, voice, blob, audioUrl); // Save audioUrl as part of history
       setHistory(getHistory());
       toast.success("Speech generated successfully!");
     } catch (error) {
@@ -148,9 +188,25 @@ const TextToSpeech = () => {
                       onChange={(e) => setVoice(e.target.value)}
                       className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
                     >
-                      <option value="Rachel">Rachel</option>
-                      <option value="John">John</option>
-                      <option value="Emma">Emma</option>
+                      <option value="Adam">Adam</option>
+                      <option value="Alice">Alice</option>
+                      <option value="Antoni">Antoni</option>
+                      <option value="Aria">Aria</option>
+                      <option value="Arnold">Arnold</option>
+                      <option value="Bill">Bill</option>
+                      <option value="Callum">Callum</option>
+                      <option value="Elli">Elli</option>
+                      <option value="Emily">Emily</option>
+                      <option value="Freya">Freya</option>
+                      <option value="Sarah">Sarah</option>
+                      <option value="Serena">Serena</option>
+                      <option value="Thomas">Thomas</option>
+                      <option value="Michael">Michael</option>
+                      <option value="Ethan">Ethan</option>
+                      <option value="George">George</option>
+                      <option value="Paul">Paul</option>
+                      <option value="Gigi">Gigi</option>
+                      <option value="Santa Claus">Santa Claus</option>
                     </select>
                   </div>
 
@@ -259,8 +315,8 @@ const TextToSpeech = () => {
                   disabled={loading}
                   className={`w-full py-3 rounded-lg text-white transition duration-300 ${
                     loading
-                      ? "bg-gray-600 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
+                      ? "bg-gray-500 cursor-not-allowed"
+                      : "bg-gray-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md hover:shadow-lg"
                   }`}
                 >
                   {loading ? "Generating..." : "Generate Speech"}
@@ -275,11 +331,6 @@ const TextToSpeech = () => {
                     <div
                       key={index}
                       className="bg-gray-700 p-4 rounded-lg cursor-pointer hover:bg-gray-600"
-                      onClick={() => {
-                        setInput(item.text);
-                        setVoice(item.voice);
-                        setActiveTab("settings");
-                      }}
                     >
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-blue-400">{item.voice}</span>
@@ -287,7 +338,28 @@ const TextToSpeech = () => {
                           {new Date(item.timestamp).toLocaleString()}
                         </span>
                       </div>
-                      <p className="text-white line-clamp-2">{item.text}</p>
+                      <p className="text-white line-clamp-2 mb-2">
+                        {item.text}
+                      </p>
+                      <div className="flex justify-between items-center">
+                        <audio
+                          controls
+                          src={item.audioUrl}
+                          className="w-full h-8"
+                        >
+                          Your browser does not support the audio element.
+                        </audio>
+                        <button
+                          className="ml-2 text-blue-400 hover:text-blue-300"
+                          onClick={() => {
+                            setInput(item.text);
+                            setVoice(item.voice);
+                            setActiveTab("settings");
+                          }}
+                        >
+                          Reuse
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}
