@@ -17,6 +17,8 @@ export const TextToImage = () => {
     history,
     modalImage,
     setModalImage,
+    numInferenceSteps,
+    setNumInferenceSteps,
     handleModelClick,
     handleStyleClick,
     handleDelete,
@@ -27,10 +29,10 @@ export const TextToImage = () => {
   } = useTextToImage(models[0].api);
 
   return (
-    <div className="bg-gradient-to-br from-black via-gray-900 to-black min-h-screen text-white flex flex-col">
+    <div className="bg-gradient-to-br from-black via-gray-700 to-black min-h-screen text-white flex flex-col">
       <Navbar />
-      <div className="grid grid-cols-1 md:grid-cols-3 p-10 m-auto w-full mt-20 gap-10 justify-center text-center">
-        {/* Sidebar Controls */}
+      <div className="grid grid-cols-12 gap-6 p-6 pt-10 mt-6 max-w-[1800px] xl:max-w-[95%] mx-auto w-full">
+        {/* Left Sidebar Controls */}
         <TextToImageControls
           formRef={formRef}
           models={models}
@@ -43,16 +45,18 @@ export const TextToImage = () => {
           setInput={setInput}
           query={query}
           loading={loading}
+          numInferenceSteps={numInferenceSteps}
+          setNumInferenceSteps={setNumInferenceSteps}
         />
 
-        {/* Display Generated Image */}
+        {/* Center - Generated Image */}
         <GeneratedImage
           imageRef={imageRef}
           imageSrc={imageSrc}
           loading={loading}
         />
 
-        {/* Image History Section */}
+        {/* Right Sidebar - History */}
         <ImageHistory
           historyRef={historyRef}
           history={history}

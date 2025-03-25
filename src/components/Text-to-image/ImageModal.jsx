@@ -3,7 +3,7 @@
 export const ImageModal = ({ modalImage, setModalImage }) => {
   return (
     <div
-      className="fixed inset-0 bg-black/80 flex items-center justify-center"
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
       onClick={() => setModalImage(null)}
     >
       <div
@@ -12,7 +12,7 @@ export const ImageModal = ({ modalImage, setModalImage }) => {
       >
         <button
           onClick={() => setModalImage(null)}
-          className="absolute top-2 right-2 text-white"
+          className="absolute top-2 right-2 text-white hover:text-gray-300"
         >
           ✕
         </button>
