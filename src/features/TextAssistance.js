@@ -1,13 +1,11 @@
 import publicAPI from "../api/publicApi";
 
-class TextAssistance {
-  basePath = "/api/tools/chatbot";
-
-  static callChatbot = async (text) => {
-    return publicAPI.post(`${TextAssistance.basePath}/chatbot`, {
-      text,
+class TextAssistanceService {
+  static callChatbot = async (messages) => {
+    return publicAPI.post("/api/tools/chatbot", {
+      messages,
     });
   };
 }
 
-export default TextAssistance;
+export default TextAssistanceService;

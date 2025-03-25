@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import gsap from "gsap";
 import { Navbar } from "../Navbar";
+import TextAssistanceService from "../../features/TextAssistance";
 
 function TextAssistance() {
   const [messages, setMessages] = useState([]);
@@ -59,7 +60,7 @@ function TextAssistance() {
     setError(null);
 
     try {
-      const response = await TextAssistance.callChatbot(input);
+      const response = await TextAssistanceService.callChatbot(input);
 
       let aiText;
       if (response.data && typeof response.data === "object") {

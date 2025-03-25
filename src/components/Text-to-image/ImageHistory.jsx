@@ -1,4 +1,9 @@
 /* eslint-disable react/prop-types */
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export const ImageHistory = ({
   historyRef,
@@ -6,22 +11,56 @@ export const ImageHistory = ({
   setModalImage,
   handleDelete,
 }) => {
+  const containerRef = useRef(null);
+  const imageRef = useRef(null);
+  useEffect(() => {
+    if (containerRef.current) {
+      let revealContainers = containerRef.current.children;
+
+      gsap.utils.toArray(revealContainers).forEach((container) => {
+        let image = container.querySelector("img");
+        let tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: container,
+            toggleActions: "restart none none reset",
+          },
+        });
+
+        tl.set(container, { autoAlpha: 1 });
+        tl.from(container, 1.5, {
+          xPercent: -100,
+          ease: "power2.out",
+        });
+        tl.from(image, 1.5, {
+          xPercent: 100,
+          scale: 1.3,
+          delay: -1.5,
+          ease: "power2.out",
+        });
+      });
+    }
+  }, [history]);
+
   return (
     <div
       ref={historyRef}
       className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700"
     >
       <h3 className="text-xl font-bold mb-3">Generated Images</h3>
-      <div className="space-y-3 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+      <div
+        ref={containerRef}
+        className="space-y-3 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"
+      >
         {history.length > 0 ? (
           history.map((entry) => (
             <div
               key={entry.id}
-              className="bg-gray-700 rounded-lg p-2 shadow-md hover:shadow-lg transition"
+              className="bg-gray-700 rounded-lg p-2 shadow-md hover:shadow-lg transition reveal"
             >
               {/* Image Display with Hover Buttons */}
               <div className="relative group">
                 <img
+                  ref={imageRef}
                   src={entry.image}
                   alt={`Generated ${entry.id}`}
                   className="w-full h-[150px] object-cover rounded-lg cursor-pointer transition duration-300 hover:opacity-90"

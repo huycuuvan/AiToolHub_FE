@@ -29,7 +29,7 @@ export const TextToImage = () => {
   return (
     <div className="bg-gradient-to-br from-black via-gray-900 to-black min-h-screen text-white flex flex-col">
       <Navbar />
-      <div className="grid grid-cols-1 md:grid-cols-3 p-10 m-auto w-full mt-20 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 p-10 m-auto w-full mt-20 gap-10 justify-center text-center">
         {/* Sidebar Controls */}
         <TextToImageControls
           formRef={formRef}
