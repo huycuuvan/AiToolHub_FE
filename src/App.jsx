@@ -13,6 +13,7 @@ import TextAssistance from "./components/Text-assis/TextAssistance";
 import { Login } from "./components/auth/Login";
 import { SignUp } from "./components/auth/SignUp";
 import { AuthProvider } from "./context/AuthContext";
+import TextToSpeech from "./components/Text-to-speech/TextToSpeech";
 
 const App = () => {
   const clientId =
@@ -29,6 +30,7 @@ const App = () => {
             <Route path="/text-to-image" element={<TextToImage />} />
             <Route path="/text-to-music" element={<TextToMusic />} />
             <Route path="/image-to-text" element={<ImageToText />} />
+            <Route path="/text-to-speech" element={<TextToSpeech />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
           </Routes>
