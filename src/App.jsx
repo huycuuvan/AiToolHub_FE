@@ -10,6 +10,7 @@ import TextToMusic from "./components/TextToMusic";
 import ImageToText from "./components/ImageToText";
 import { SignUp } from "./components/SignUp";
 import { ToastContainer } from "react-toastify";
+import TextToSpeech from "./components/Text-to-speech/TextToSpeech";
 
 const App = () => {
   const clientId =
@@ -26,6 +27,7 @@ const App = () => {
             <Route path="/text-to-image" element={<TextToImage />} />
             <Route path="/text-to-music" element={<TextToMusic />} />
             <Route path="/image-to-text" element={<ImageToText />} />
+            <Route path="/text-to-speech" element={<TextToSpeech />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
           </Routes>

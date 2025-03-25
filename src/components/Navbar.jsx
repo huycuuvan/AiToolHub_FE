@@ -76,6 +76,17 @@ export const Navbar = () => {
           >
             Image to Text Converter
           </Link>
+
+          <Link
+            to="/text-to-speech"
+            className={`px-5 text-xl cursor-pointer transition-all ${
+              location.pathname === "/text-to-speech"
+                ? "text-white font-bold"
+                : "text-gray-200 hover:text-white"
+            }`}
+          >
+            Text to Speech
+          </Link>
         </div>
 
         {user ? (
