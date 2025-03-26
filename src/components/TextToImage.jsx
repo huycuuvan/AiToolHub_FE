@@ -5,6 +5,7 @@ import axiosInstance from "../api";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Loader from "./Loader";
+import { motion } from "framer-motion";
 
 export const TextToImage = () => {
   const [input, setInput] = useState("");
@@ -241,22 +242,41 @@ export const TextToImage = () => {
           {/* Styles Section (Flexible Height) */}
           <div className="flex-grow mt-6 min-h-[300px] flex flex-col">
             <h3 className="text-xl font-bold">Choose a Style</h3>
-            <div className="mt-3 p-2 border border-gray-700 rounded-lg overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 max-h-[250px]">
-              <div className="grid grid-cols-3 gap-3">
+
+            <div className="mt-3 p-3 border border-gray-700 rounded-xl overflow-y-auto max-h-[250px] scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+              <div className="grid grid-cols-3 gap-4">
                 {styles.map((style) => (
-                  <div key={style.name} className="flex flex-col items-center">
-                    <img
+                  <motion.div
+                    key={style.name}
+                    className="flex flex-col items-center"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    <motion.img
                       src={style.thumbnail}
                       alt={style.name}
                       onClick={() => handleStyleClick(style)}
-                      className={`w-16 h-16 lg:w-20 lg:h-20 object-cover rounded-lg cursor-pointer transition-all ${
+                      initial={false}
+                      animate={
                         selectedStyle === style.name
-                          ? "ring-4 ring-indigo-500 scale-105"
+                          ? { scale: 1.1 }
+                          : { scale: 1.0 }
+                      }
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 20,
+                      }}
+                      className={`w-16 h-16 lg:w-20 lg:h-20 object-cover rounded-xl cursor-pointer shadow-md ${
+                        selectedStyle === style.name
+                          ? "ring-4 ring-indigo-500"
                           : "hover:opacity-80"
                       }`}
                     />
-                    <span className="mt-1 text-xs">{style.name}</span>
-                  </div>
+                    <span className="mt-2 text-xs text-center">
+                      {style.name}
+                    </span>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -265,18 +285,69 @@ export const TextToImage = () => {
           {/* Inference Steps Slider */}
           <div className="mt-6">
             <h3 className="text-xl font-bold">Inference Steps</h3>
-            <div className="mt-2">
+            <div className="relative mt-4 h-6">
+              {/* Track Background */}
+              <div className="absolute top-1/2 w-full h-2 bg-gray-300 rounded-full transform -translate-y-1/2" />
+
+              {/* Animated Fill */}
+              <motion.div
+                className="absolute top-1/2 h-2 bg-blue-600 rounded-full transform -translate-y-1/2"
+                initial={false}
+                animate={{ width: `${((numInferenceSteps - 1) / 49) * 100}%` }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+
+              {/* Range Input (Transparent) */}
               <input
                 type="range"
                 min="1"
                 max="50"
                 value={numInferenceSteps}
                 onChange={(e) => setNumInferenceSteps(Number(e.target.value))}
-                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                className="w-full h-6 bg-transparent appearance-none pointer-events-auto z-10 relative"
+                style={{ WebkitAppearance: "none" }}
               />
-              <div className="text-center text-white mt-2">
-                Selected: {numInferenceSteps} steps
-              </div>
+
+              {/* Thumb Styling */}
+              <style jsx>{`
+                input[type="range"]::-webkit-slider-thumb {
+                  -webkit-appearance: none;
+                  height: 20px;
+                  width: 20px;
+                  background: white;
+                  border: 3px solid #2563eb;
+                  border-radius: 50%;
+                  cursor: pointer;
+                  margin-top: -8px;
+                  position: relative;
+                  z-index: 10;
+                }
+
+                input[type="range"]::-moz-range-thumb {
+                  height: 20px;
+                  width: 20px;
+                  background: white;
+                  border: 3px solid #2563eb;
+                  border-radius: 50%;
+                  cursor: pointer;
+                  position: relative;
+                  z-index: 10;
+                }
+
+                input[type="range"]::-webkit-slider-runnable-track {
+                  height: 6px;
+                  background: transparent;
+                }
+
+                input[type="range"]::-moz-range-track {
+                  height: 6px;
+                  background: transparent;
+                }
+              `}</style>
+            </div>
+
+            <div className="text-center text-white mt-2">
+              Selected: {numInferenceSteps} steps
             </div>
           </div>
 

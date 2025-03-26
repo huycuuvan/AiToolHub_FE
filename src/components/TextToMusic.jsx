@@ -2,19 +2,18 @@ import React, { useState } from "react";
 import { Navbar } from "./Navbar";
 
 const TextToMusic = () => {
-  const [text, setText] = useState(""); // Text input
-  const [error, setError] = useState(""); // Error state
-  const [loading, setLoading] = useState(false); // Loading state
-  const [audioUrl, setAudioUrl] = useState(null); // Audio URL
+  const [text, setText] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
 
-  // Function to handle API call
   const handleConvert = async () => {
     if (!text) {
       setError("Please enter some text to convert!");
       return;
     }
-    setError(""); // Clear error
-    setLoading(true); // Set loading state
+    setError("");
+    setLoading(true);
 
     try {
       const response = await fetch(
@@ -35,46 +34,44 @@ const TextToMusic = () => {
 
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
-      setAudioUrl(audioUrl); // Set the audio URL
+      setAudioUrl(audioUrl);
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false); // Reset loading state
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen text-white bg-gradient-to-br from-black via-gray-700 to-black">
-      {/* Fixed Navbar */}
+    <div className="flex flex-col items-center min-h-screen text-white bg-gradient-to-br from-purple-300 via-purple-300 to-pink-200">
       <Navbar />
 
-      {/* Main Content */}
       <div className="flex-1 w-full flex items-center justify-center">
-        {" "}
-        {/* Thêm pt-16 để tránh overlap với Navbar */}
-        <div className="w-full max-w-2xl">
-          <h1 className="text-4xl font-bold text-center mb-10">
+        <div className="w-full max-w-2xl px-4">
+          <h1 className="text-4xl font-bold text-center mb-10 text-purple-800">
             Generate Music
           </h1>
-          {/* Input Section */}
+
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Enter text here..."
-            className="w-full h-32 bg-gray-800 text-white p-4 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-32 bg-white text-gray-800 p-4 rounded-lg resize-none shadow focus:outline-none focus:ring-2 focus:ring-purple-500"
           ></textarea>
+
           {error && (
-            <div className="text-red-500 mt-2 text-center">{error}</div>
+            <div className="text-red-600 mt-2 text-center font-medium">
+              {error}
+            </div>
           )}
 
-          {/* Buttons */}
           <div className="flex justify-center gap-4 mt-6">
             <button
               onClick={handleConvert}
-              className={`px-6 py-3 rounded-lg text-white ${
+              className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${
                 loading
-                  ? "bg-gray-500 cursor-not-allowed"
-                  : "bg-gray-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md hover:shadow-lg"
+                  ? "bg-purple-300 cursor-not-allowed"
+                  : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-md hover:shadow-lg"
               }`}
               disabled={loading}
             >
@@ -87,15 +84,14 @@ const TextToMusic = () => {
                 setAudioUrl(null);
                 setError("");
               }}
-              className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              className="px-6 py-3 bg-white text-purple-600 border border-purple-400 rounded-lg hover:bg-purple-50 transition font-semibold"
             >
               Clear
             </button>
           </div>
 
-          {/* Audio Player */}
           {audioUrl && (
-            <div className="mt-6">
+            <div className="mt-6 bg-white p-4 rounded-lg shadow">
               <audio controls src={audioUrl} className="w-full">
                 Your browser does not support the audio element.
               </audio>

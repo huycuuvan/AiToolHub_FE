@@ -214,7 +214,7 @@ const TextToSpeech = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-200 to-blue-500">
       <Navbar />
       <div className="pt-20 px-4 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-4">
