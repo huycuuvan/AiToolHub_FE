@@ -1,9 +1,15 @@
-export const saveToHistory = (text, voice) => {
-  const history = JSON.parse(localStorage.getItem("ttsHistory") || "[]");
-  history.unshift({ text, voice, timestamp: new Date().toISOString() });
-  localStorage.setItem("ttsHistory", JSON.stringify(history.slice(0, 20))); // Keep last 20 items
+export const saveToHistory = (text, voice, blob, audioUrl) => {
+  const history = getHistory();
+  const newEntry = {
+    text,
+    voice,
+    timestamp: new Date().toISOString(),
+  };
+  history.unshift(newEntry);
+  localStorage.setItem("speechHistory", JSON.stringify(history));
 };
 
 export const getHistory = () => {
-  return JSON.parse(localStorage.getItem("ttsHistory") || "[]");
+  const history = localStorage.getItem("speechHistory");
+  return history ? JSON.parse(history) : [];
 };

@@ -3,75 +3,93 @@ import { Navbar } from "../Navbar";
 import gsap from "gsap";
 import { toast } from "react-toastify";
 import { saveToHistory, getHistory } from "../../utils/localStorage";
+import { formatDistanceToNow } from "date-fns";
+
+// Define voice options
+const VOICES = {
+  ADAM: { name: "Adam" },
+  ALICE: { name: "Alice" },
+  ANTONI: { name: "Antoni" },
+  ARIA: { name: "Aria" },
+  ARNOLD: { name: "Arnold" },
+  BILL: { name: "Bill" },
+  CALLUM: { name: "Callum" },
+  ELLI: { name: "Elli" },
+  EMILY: { name: "Emily" },
+  FREYA: { name: "Freya" },
+  SARAH: { name: "Sarah" },
+  SERENA: { name: "Serena" },
+  THOMAS: { name: "Thomas" },
+  MICHAEL: { name: "Michael" },
+  ETHAN: { name: "Ethan" },
+  GEORGE: { name: "George" },
+  PAUL: { name: "Paul" },
+  GIGI: { name: "Gigi" },
+  SANTA_CLAUS: { name: "Santa Claus" },
+};
 
 const TextToSpeech = () => {
   const [activeTab, setActiveTab] = useState("settings");
   const [history, setHistory] = useState([]);
   const [input, setInput] = useState("");
-  // First, add the voice options enum at the top of the file
-  const VOICES = {
-    ADAM: { name: "Adam", id: "pNInz6obpgDQGcFmaJgB" },
-    ALICE: { name: "Alice", id: "Xb7hH8MSUJpSbSDYk0k2" },
-    ANTONI: { name: "Antoni", id: "ErXwobaYiN019PkySvjV" },
-    ARIA: { name: "Aria", id: "ErXwobaYiN019PkySvjV" },
-    ARNOLD: { name: "Arnold", id: "VR6AewLTigWG4xSOukaG" },
-    BILL: { name: "Bill", id: "pqHfZKP75CvOlQylNhV4" },
-    CALLUM: { name: "Callum", id: "N2lVS1w4EtoT3dr4eOWO" },
-    ELLI: { name: "Elli", id: "MF3mGyEYCl7XYWbV9V6O" },
-    EMILY: { name: "Emily", id: "LcfcDJNUP1GQjkzn1xUU" },
-    FREYA: { name: "Freya", id: "jsCqWAovK2LkecY7zXl4" },
-    SARAH: { name: "Sarah", id: "EXAVITQu4vr4xnSDxMaL" },
-    SERENA: { name: "Serena", id: "pMsXgVXv3BLzUgSXRplE" },
-    THOMAS: { name: "Thomas", id: "GBv7mTt0atIp3Br8iCZE" },
-    MICHAEL: { name: "Michael", id: "flq6f7yk4E4fJM5XTYuZ" },
-    ETHAN: { name: "Ethan", id: "g5CIjZEefAph4nQFvHAz" },
-    GEORGE: { name: "George", id: "Yko7PKHZNXotIFUBG7I9" },
-    PAUL: { name: "Paul", id: "5Q0t7uMcjvnagumLfvZi" },
-    GIGI: { name: "Gigi", id: "jBpfuIE2acCO8z3wKNLl" },
-    SANTA_CLAUS: { name: "Santa Claus", id: "knrPHWnBmmDHMoiMeP3l" },
-  };
-
-  // Update the initial voice state to use the first voice
-  const [voice, setVoice] = useState(VOICES.ADAM.name);
+  const [voice, setVoice] = useState(VOICES.CALLUM.name);
+  const [model, setModel] = useState("Eleven Turbo v2.5");
   const [speed, setSpeed] = useState(1);
   const [stability, setStability] = useState(0.5);
   const [similarity, setSimilarity] = useState(0.75);
-  const [styleExaggeration, setStyleExaggeration] = useState(0);
-  const [speakerBoost, setSpeakerBoost] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [generatedAudioUrl, setGeneratedAudioUrl] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [historyAudio, setHistoryAudio] = useState({}); // Store audio URLs for history entries
 
+  const audioRef = useRef(null);
+  const historyAudioRefs = useRef({}); // Refs for history audio elements
   const containerRef = useRef(null);
   const titleRef = useRef(null);
 
+  // Load history on mount
   useEffect(() => {
+    const savedHistory = getHistory();
+    setHistory(savedHistory);
+
+    // GSAP animations
     gsap.fromTo(
       titleRef.current,
       { y: -50, opacity: 0 },
       { y: 0, opacity: 1, duration: 1, ease: "power3.out" }
     );
-
     gsap.fromTo(
       containerRef.current,
       { opacity: 0, y: 50 },
       { opacity: 1, y: 0, duration: 1, delay: 0.5, ease: "power3.out" }
     );
-    setHistory(getHistory());
   }, []);
 
-  // Update the select element in the settings section
-  <select
-    value={voice}
-    onChange={(e) => setVoice(e.target.value)}
-    className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
-  >
-    {Object.values(VOICES).map((voice) => (
-      <option key={voice.id} value={voice.name}>
-        {voice.name}
-      </option>
-    ))}
-  </select>;
+  // Update audio current time and duration for main audio
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      const updateTime = () => {
+        setCurrentTime(audio.currentTime);
+        setDuration(audio.duration || 0);
+      };
 
-  // Update the handleSubmit function to include the voice ID
+      audio.addEventListener("timeupdate", updateTime);
+      audio.addEventListener("loadedmetadata", updateTime);
+      audio.addEventListener("ended", () => setIsPlaying(false));
+
+      return () => {
+        audio.removeEventListener("timeupdate", updateTime);
+        audio.removeEventListener("loadedmetadata", updateTime);
+        audio.removeEventListener("ended", () => setIsPlaying(false));
+      };
+    }
+  }, [generatedAudioUrl]);
+
+  // Handle form submission for main generation
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) {
@@ -80,6 +98,11 @@ const TextToSpeech = () => {
     }
 
     setLoading(true);
+    setGeneratedAudioUrl(null);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(false);
+
     try {
       const selectedVoice = Object.values(VOICES).find((v) => v.name === voice);
       const response = await fetch(
@@ -92,21 +115,25 @@ const TextToSpeech = () => {
           body: JSON.stringify({
             input,
             voice: selectedVoice.name,
+            speed,
+            stability,
+            similarity,
           }),
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to generate speech");
+        const errorData = await response.json();
+        console.error("Server error:", errorData);
+        throw new Error(errorData.message || "Failed to generate speech");
       }
 
       const blob = await response.blob();
-      const audioUrl = URL.createObjectURL(blob); // Create an audio URL
-      const audio = new Audio(audioUrl);
-      audio.play();
+      const audioUrl = URL.createObjectURL(blob);
+      setGeneratedAudioUrl(audioUrl);
 
-      // Save audio URL to history
-      saveToHistory(input, voice, blob, audioUrl); // Save audioUrl as part of history
+      // Save to history with all parameters
+      saveToHistory(input, voice, speed, stability, similarity);
       setHistory(getHistory());
       toast.success("Speech generated successfully!");
     } catch (error) {
@@ -116,61 +143,325 @@ const TextToSpeech = () => {
     }
   };
 
+  // Handle playback for history entries
+  const handleHistoryPlayback = async (item, index) => {
+    // If audio is already generated for this history entry, play it
+    if (historyAudio[index]) {
+      const audio = historyAudioRefs.current[index];
+      if (audio) {
+        if (audio.paused) {
+          audio.play();
+        } else {
+          audio.pause();
+        }
+      }
+      return;
+    }
+
+    // Otherwise, regenerate the audio
+    try {
+      const selectedVoice = Object.values(VOICES).find(
+        (v) => v.name === item.voice
+      );
+      const response = await fetch(
+        "http://localhost:8080/api/tools/text-to-speech",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            input: item.text,
+            voice: selectedVoice.name,
+            speed: item.speed,
+            stability: item.stability,
+            similarity: item.similarity,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Server error:", errorData);
+        throw new Error(errorData.message || "Failed to generate speech");
+      }
+
+      const blob = await response.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      setHistoryAudio((prev) => ({ ...prev, [index]: audioUrl }));
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  // Toggle play/pause for the main generated audio
+  const togglePlayPause = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  // Handle timeline scrubbing for main audio
+  const handleTimelineChange = (e) => {
+    const newTime = parseFloat(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  // Reset settings
+  const resetSettings = () => {
+    setSpeed(1);
+    setStability(0.5);
+    setSimilarity(0.75);
+  };
+
+  // Filter and group history by date
+  const filteredHistory = history.filter(
+    (item) =>
+      item.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.voice.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const groupedHistory = filteredHistory.reduce(
+    (acc, item) => {
+      const date = new Date(item.timestamp);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+
+      if (date.toDateString() === today.toDateString()) {
+        acc.today.push(item);
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        acc.yesterday.push(item);
+      }
+      return acc;
+    },
+    { today: [], yesterday: [] }
+  );
+
+  // Format time in MM:SS
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-600 to-black">
+    <div className="min-h-screen bg-white text-gray-900">
       <Navbar />
       <div className="pt-20 px-4 max-w-7xl mx-auto">
-        <h1
-          ref={titleRef}
-          className="text-4xl font-bold text-white text-center mb-8"
-        >
-          Text to Speech
-        </h1>
-
-        <div
-          ref={containerRef}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
-        >
-          {/* Left Column - Input */}
-          <div className="bg-gray-800 p-8 rounded-lg shadow-lg">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Start typing here or paste any text you want to turn into lifelike speech..."
-              className="w-full h-[calc(100vh-300px)] p-4 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
-              required
-            />
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className={`w-full mt-4 py-3 rounded-lg text-white transition duration-300 ${
-                loading
-                  ? "bg-gray-600 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
-            >
-              {loading ? "Generating..." : "Generate Speech"}
+        <div className="flex justify-between items-center mb-4">
+          <h1 ref={titleRef} className="text-2xl font-semibold text-gray-900">
+            Text to Speech
+          </h1>
+          <div className="flex space-x-2">
+            <button className="text-gray-600 hover:text-gray-900 text-sm flex items-center">
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                />
+              </svg>
+              Feedback
+            </button>
+            <button className="text-gray-600 hover:text-gray-900 text-sm flex items-center">
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Documentation
             </button>
           </div>
+        </div>
 
-          {/* Right Column - Settings/History Tabs */}
-          <div className="bg-gray-800 p-8 rounded-lg shadow-lg">
-            <div className="flex border-b border-gray-700 mb-6">
+        <div ref={containerRef} className="flex flex-col md:flex-row gap-6">
+          {/* Left Section: Textarea and Generated Audio */}
+          <div className="w-full md:w-2/3">
+            <form onSubmit={handleSubmit}>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Start typing here or paste any text you want to turn into lifelike speech..."
+                className="w-full h-64 p-4 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400 resize-none"
+                required
+              />
+
+              {/* Character Count */}
+              <div className="flex justify-between items-center mt-2">
+                <div className="flex space-x-4 text-sm text-gray-600">
+                  <span>{input.length} / 5,000 characters</span>
+                </div>
+                {generatedAudioUrl && (
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className={`px-4 py-2 rounded-lg font-semibold text-white transition duration-300 ${
+                      loading
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-blue-500 hover:bg-blue-600"
+                    }`}
+                  >
+                    {loading ? "Generating..." : "Regenerate speech"}
+                  </button>
+                )}
+              </div>
+            </form>
+
+            {/* Generated Audio Section */}
+            {generatedAudioUrl && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+                  <span className="text-sm text-gray-600">
+                    {voice} • Created now
+                  </span>
+                </div>
+                <div className="flex-1 flex items-center space-x-2">
+                  <button
+                    onClick={togglePlayPause}
+                    className="focus:outline-none"
+                  >
+                    <svg
+                      className="w-6 h-6 text-gray-600"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      {isPlaying ? (
+                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                      ) : (
+                        <path d="M8 5v14l11-7z" />
+                      )}
+                    </svg>
+                  </button>
+                  <audio
+                    ref={audioRef}
+                    src={generatedAudioUrl}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    className="hidden"
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-600">
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max={duration || 0}
+                      value={currentTime}
+                      onChange={handleTimelineChange}
+                      className="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #007bff ${
+                          (currentTime / (duration || 1)) * 100
+                        }%, #d1d5db ${(currentTime / (duration || 1)) * 100}%)`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <button className="text-gray-600 hover:text-gray-900">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M8.445 14.832A1 1 0 0010 14v-4a1 1 0 00-1.555-.832l-4 3a1 1 0 000 1.664l4 3zM15.555 9.168A1 1 0 0014 10v4a1 1 0 001.555.832l4-3a1 1 0 000-1.664l-4-3z"
+                      />
+                    </svg>
+                  </button>
+                  <a
+                    href={generatedAudioUrl}
+                    download={`speech-${Date.now()}.mp3`}
+                    className="text-gray-600 hover:text-gray-900"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                  </a>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Section: Settings/History Panel */}
+          <div className="w-full md:w-1/3 bg-gray-50 rounded-lg p-4 shadow-sm">
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 mb-4">
               <button
-                className={`px-4 py-2 ${
+                className={`px-4 py-2 text-sm font-medium ${
                   activeTab === "settings"
-                    ? "text-white border-b-2 border-blue-500"
-                    : "text-gray-400 hover:text-white"
+                    ? "text-blue-500 border-b-2 border-blue-500"
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
                 onClick={() => setActiveTab("settings")}
               >
                 Settings
               </button>
               <button
-                className={`px-4 py-2 ${
+                className={`px-4 py-2 text-sm font-medium ${
                   activeTab === "history"
-                    ? "text-white border-b-2 border-blue-500"
-                    : "text-gray-400 hover:text-white"
+                    ? "text-blue-500 border-b-2 border-blue-500"
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
                 onClick={() => setActiveTab("history")}
               >
@@ -179,195 +470,498 @@ const TextToSpeech = () => {
             </div>
 
             {activeTab === "settings" ? (
-              <>
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-white mb-2">Voice</label>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Voice Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Voice
+                  </label>
+                  <div className="relative">
                     <select
                       value={voice}
                       onChange={(e) => setVoice(e.target.value)}
-                      className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      className="w-full p-2 rounded-lg border border-gray-300 text-gray-600 focus:border-blue-500 focus:outline-none appearance-none"
                     >
-                      <option value="Adam">Adam</option>
-                      <option value="Alice">Alice</option>
-                      <option value="Antoni">Antoni</option>
-                      <option value="Aria">Aria</option>
-                      <option value="Arnold">Arnold</option>
-                      <option value="Bill">Bill</option>
-                      <option value="Callum">Callum</option>
-                      <option value="Elli">Elli</option>
-                      <option value="Emily">Emily</option>
-                      <option value="Freya">Freya</option>
-                      <option value="Sarah">Sarah</option>
-                      <option value="Serena">Serena</option>
-                      <option value="Thomas">Thomas</option>
-                      <option value="Michael">Michael</option>
-                      <option value="Ethan">Ethan</option>
-                      <option value="George">George</option>
-                      <option value="Paul">Paul</option>
-                      <option value="Gigi">Gigi</option>
-                      <option value="Santa Claus">Santa Claus</option>
+                      {Object.values(VOICES).map((voice) => (
+                        <option key={voice.id} value={voice.name}>
+                          {voice.name}
+                        </option>
+                      ))}
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-white mb-2">Speed</label>
-                    <div className="flex justify-between text-gray-400 text-sm mb-1">
-                      <span>Slower</span>
-                      <span>Faster</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="2"
-                      step="0.1"
-                      value={speed}
-                      onChange={(e) => setSpeed(parseFloat(e.target.value))}
-                      className="w-full accent-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-white mb-2">Stability</label>
-                    <div className="flex justify-between text-gray-400 text-sm mb-1">
-                      <span>More variable</span>
-                      <span>More stable</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={stability}
-                      onChange={(e) => setStability(parseFloat(e.target.value))}
-                      className="w-full accent-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-white mb-2">Similarity</label>
-                    <div className="flex justify-between text-gray-400 text-sm mb-1">
-                      <span>Low</span>
-                      <span>High</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={similarity}
-                      onChange={(e) =>
-                        setSimilarity(parseFloat(e.target.value))
-                      }
-                      className="w-full accent-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-white mb-2">
-                      Style Exaggeration
-                    </label>
-                    <div className="flex justify-between text-gray-400 text-sm mb-1">
-                      <span>None</span>
-                      <span>Exaggerated</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={styleExaggeration}
-                      onChange={(e) =>
-                        setStyleExaggeration(parseFloat(e.target.value))
-                      }
-                      className="w-full accent-blue-500"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center text-white cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={speakerBoost}
-                        onChange={(e) => setSpeakerBoost(e.target.checked)}
-                        className="mr-2 accent-blue-500"
-                      />
-                      Speaker boost
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSpeed(1);
-                        setStability(0.5);
-                        setSimilarity(0.75);
-                        setStyleExaggeration(0);
-                        setSpeakerBoost(false);
-                      }}
-                      className="text-blue-400 hover:text-blue-300"
+                    <svg
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
                     >
-                      Reset values
-                    </button>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
                   </div>
                 </div>
 
+                {/* Model Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Model
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                      className="w-full p-2 rounded-lg border border-gray-300 text-gray-600 focus:border-blue-500 focus:outline-none appearance-none"
+                    >
+                      <option value="Eleven Turbo v2.5">
+                        Eleven Turbo v2.5
+                      </option>
+                    </select>
+                    <svg
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Speed Slider */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Speed
+                  </label>
+                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Slower</span>
+                    <span>Faster</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.1"
+                    value={speed}
+                    onChange={(e) => setSpeed(parseFloat(e.target.value))}
+                    className="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #007bff ${
+                        ((speed - 0.5) / 1.5) * 100
+                      }%, #d1d5db ${((speed - 0.5) / 1.5) * 100}%)`,
+                    }}
+                  />
+                </div>
+
+                {/* Stability Slider */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Stability
+                  </label>
+                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>More variable</span>
+                    <span>More stable</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={stability}
+                    onChange={(e) => setStability(parseFloat(e.target.value))}
+                    className="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #007bff ${
+                        (stability / 1) * 100
+                      }%, #d1d5db ${(stability / 1) * 100}%)`,
+                    }}
+                  />
+                </div>
+
+                {/* Similarity Slider */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Similarity
+                  </label>
+                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Low</span>
+                    <span>High</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={similarity}
+                    onChange={(e) => setSimilarity(parseFloat(e.target.value))}
+                    className="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #007bff ${
+                        (similarity / 1) * 100
+                      }%, #d1d5db ${(similarity / 1) * 100}%)`,
+                    }}
+                  />
+                </div>
+
+                {/* Reset Values */}
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={resetSettings}
+                    className="text-blue-500 hover:text-blue-600 text-sm"
+                  >
+                    Reset values
+                  </button>
+                </div>
+
+                {/* Generate Button */}
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full py-3 rounded-lg text-white transition duration-300 ${
+                  className={`w-full py-3 rounded-lg font-semibold text-white transition duration-300 ${
                     loading
-                      ? "bg-gray-500 cursor-not-allowed"
-                      : "bg-gray-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md hover:shadow-lg"
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-500 hover:bg-blue-600"
                   }`}
                 >
-                  {loading ? "Generating..." : "Generate Speech"}
+                  {loading ? "Generating..." : "Generate"}
                 </button>
-              </>
+              </form>
             ) : (
-              <div className="space-y-4 h-[calc(100vh-300px)] overflow-y-auto">
-                {history.length === 0 ? (
-                  <p className="text-gray-400 text-center">No history yet</p>
-                ) : (
-                  history.map((item, index) => (
-                    <div
-                      key={index}
-                      className="bg-gray-700 p-4 rounded-lg cursor-pointer hover:bg-gray-600"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-blue-400">{item.voice}</span>
-                        <span className="text-gray-400 text-sm">
-                          {new Date(item.timestamp).toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-white line-clamp-2 mb-2">
-                        {item.text}
-                      </p>
-                      <div className="flex justify-between items-center">
-                        <audio
-                          controls
-                          src={item.audioUrl}
-                          className="w-full h-8"
-                        >
-                          Your browser does not support the audio element.
-                        </audio>
-                        <button
-                          className="ml-2 text-blue-400 hover:text-blue-300"
-                          onClick={() => {
-                            setInput(item.text);
-                            setVoice(item.voice);
-                            setActiveTab("settings");
-                          }}
-                        >
-                          Reuse
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div className="space-y-4">
+                {/* Search Bar */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search history..."
+                    className="w-full p-2 rounded-lg border border-gray-300 text-gray-600 focus:border-blue-500 focus:outline-none"
+                  />
+                  <svg
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+
+                {/* History Entries */}
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {filteredHistory.length === 0 ? (
+                    <p className="text-gray-400 text-center">No history yet</p>
+                  ) : (
+                    <>
+                      {groupedHistory.today.length > 0 && (
+                        <>
+                          <h3 className="text-sm font-semibold text-gray-600">
+                            Today
+                          </h3>
+                          {groupedHistory.today.map((item, index) => (
+                            <div
+                              key={index}
+                              className="p-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 cursor-pointer"
+                            >
+                              <div className="flex justify-between items-center">
+                                <div
+                                  onClick={() => {
+                                    setInput(item.text);
+                                    setVoice(item.voice);
+                                    setSpeed(item.speed || 1);
+                                    setStability(item.stability || 0.5);
+                                    setSimilarity(item.similarity || 0.75);
+                                    setActiveTab("settings");
+                                  }}
+                                  className="flex-1"
+                                >
+                                  <p className="text-gray-900 line-clamp-1">
+                                    {item.text}
+                                  </p>
+                                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                    <span
+                                      className={`w-3 h-3 rounded-full ${
+                                        item.voice === "George"
+                                          ? "bg-orange-500"
+                                          : item.voice === "Antoni"
+                                          ? "bg-green-500"
+                                          : item.voice === "Emily"
+                                          ? "bg-pink-500"
+                                          : item.voice === "Callum"
+                                          ? "bg-orange-500"
+                                          : item.voice === "Adam"
+                                          ? "bg-blue-500"
+                                          : "bg-blue-500"
+                                      }`}
+                                    ></span>
+                                    <span>{item.voice}</span>
+                                    <span>·</span>
+                                    <span>
+                                      {formatDistanceToNow(
+                                        new Date(item.timestamp)
+                                      )}{" "}
+                                      ago
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() =>
+                                      handleHistoryPlayback(
+                                        item,
+                                        `today-${index}`
+                                      )
+                                    }
+                                    className="text-gray-600 hover:text-gray-900"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="currentColor"
+                                      viewBox="0 0 24 24"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path d="M8 5v14l11-7z" />
+                                    </svg>
+                                  </button>
+                                  <button className="text-gray-600 hover:text-gray-900">
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M8.445 14.832A1 1 0 0010 14v-4a1 1 0 00-1.555-.832l-4 3a1 1 0 000 1.664l4 3zM15.555 9.168A1 1 0 0014 10v4a1 1 0 001.555.832l4-3a1 1 0 000-1.664l-4-3z"
+                                      />
+                                    </svg>
+                                  </button>
+                                  <a
+                                    href={historyAudio[`today-${index}`]}
+                                    download={`speech-${Date.now()}.mp3`}
+                                    className={`text-gray-600 hover:text-gray-900 ${
+                                      !historyAudio[`today-${index}`]
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                    }`}
+                                    onClick={(e) =>
+                                      !historyAudio[`today-${index}`] &&
+                                      e.preventDefault()
+                                    }
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                      />
+                                    </svg>
+                                  </a>
+                                </div>
+                              </div>
+                              {historyAudio[`today-${index}`] && (
+                                <audio
+                                  ref={(el) =>
+                                    (historyAudioRefs.current[
+                                      `today-${index}`
+                                    ] = el)
+                                  }
+                                  src={historyAudio[`today-${index}`]}
+                                  className="hidden"
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      {groupedHistory.yesterday.length > 0 && (
+                        <>
+                          <h3 className="text-sm font-semibold text-gray-600 mt-4">
+                            Yesterday
+                          </h3>
+                          {groupedHistory.yesterday.map((item, index) => (
+                            <div
+                              key={index}
+                              className="p-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 cursor-pointer"
+                            >
+                              <div className="flex justify-between items-center">
+                                <div
+                                  onClick={() => {
+                                    setInput(item.text);
+                                    setVoice(item.voice);
+                                    setSpeed(item.speed || 1);
+                                    setStability(item.stability || 0.5);
+                                    setSimilarity(item.similarity || 0.75);
+                                    setActiveTab("settings");
+                                  }}
+                                  className="flex-1"
+                                >
+                                  <p className="text-gray-900 line-clamp-1">
+                                    {item.text}
+                                  </p>
+                                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                    <span
+                                      className={`w-3 h-3 rounded-full ${
+                                        item.voice === "George"
+                                          ? "bg-orange-500"
+                                          : item.voice === "Antoni"
+                                          ? "bg-green-500"
+                                          : item.voice === "Emily"
+                                          ? "bg-pink-500"
+                                          : item.voice === "Callum"
+                                          ? "bg-orange-500"
+                                          : item.voice === "Adam"
+                                          ? "bg-blue-500"
+                                          : "bg-blue-500"
+                                      }`}
+                                    ></span>
+                                    <span>{item.voice}</span>
+                                    <span>·</span>
+                                    <span>
+                                      {formatDistanceToNow(
+                                        new Date(item.timestamp)
+                                      )}{" "}
+                                      ago
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() =>
+                                      handleHistoryPlayback(
+                                        item,
+                                        `yesterday-${index}`
+                                      )
+                                    }
+                                    className="text-gray-600 hover:text-gray-900"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="currentColor"
+                                      viewBox="0 0 24 24"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path d="M8 5v14l11-7z" />
+                                    </svg>
+                                  </button>
+                                  <button className="text-gray-600 hover:text-gray-900">
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M8.445 14.832A1 1 0 0010 14v-4a1 1 0 00-1.555-.832l-4 3a1 1 0 000 1.664l4 3zM15.555 9.168A1 1 0 0014 10v4a1 1 0 001.555.832l4-3a1 1 0 000-1.664l-4-3z"
+                                      />
+                                    </svg>
+                                  </button>
+                                  <a
+                                    href={historyAudio[`yesterday-${index}`]}
+                                    download={`speech-${Date.now()}.mp3`}
+                                    className={`text-gray-600 hover:text-gray-900 ${
+                                      !historyAudio[`yesterday-${index}`]
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                    }`}
+                                    onClick={(e) =>
+                                      !historyAudio[`yesterday-${index}`] &&
+                                      e.preventDefault()
+                                    }
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                      />
+                                    </svg>
+                                  </a>
+                                </div>
+                              </div>
+                              {historyAudio[`yesterday-${index}`] && (
+                                <audio
+                                  ref={(el) =>
+                                    (historyAudioRefs.current[
+                                      `yesterday-${index}`
+                                    ] = el)
+                                  }
+                                  src={historyAudio[`yesterday-${index}`]}
+                                  className="hidden"
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Custom Styles */}
+      <style>{`
+        /* Custom range input styling */
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          background: #fff;
+          border: 2px solid #007bff;
+          border-radius: 50%;
+          cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          background: #fff;
+          border: 2px solid #007bff;
+          border-radius: 50%;
+          cursor: pointer;
+        }
+      `}</style>
     </div>
   );
 };
