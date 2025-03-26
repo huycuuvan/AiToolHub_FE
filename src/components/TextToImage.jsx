@@ -230,7 +230,7 @@ export const TextToImage = () => {
                 onClick={() => handleModelClick(model)}
                 className={`p-2 rounded-lg transition-all ${
                   apiEndpoint === model.api
-                    ? "bg-indigo-600"
+                    ? "bg-gradient-to-r from-fuchsia-500 to-cyan-400 hover:from-fuchsia-600 hover:to-cyan-500 shadow-md hover:shadow-lg"
                     : "bg-gray-700 hover:bg-gray-600"
                 }`}
               >
@@ -366,7 +366,7 @@ export const TextToImage = () => {
               className={`w-full mt-4 p-3 rounded-lg font-bold text-lg transition-all ${
                 loading
                   ? "bg-gray-600 cursor-not-allowed"
-                  : "bg-indigo-600 hover:bg-indigo-500"
+                  : "bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 shadow-md hover:shadow-lg"
               }`}
             >
               {loading ? "Generating..." : "Generate"}
@@ -378,7 +378,7 @@ export const TextToImage = () => {
         <div className="col-span-12 md:col-span-5 lg:col-span-6 flex items-center justify-center">
           <div
             ref={imageRef}
-            className="bg-gray-700 p-8 lg:p-10 rounded-xl border border-gray-600 w-full max-w-[600px] h-[500px] flex items-center justify-center"
+            className="bg-gray-800 p-8 lg:p-10 rounded-xl border border-gray-600 w-full max-w-[600px] h-[500px] flex items-center justify-center "
           >
             {loading ? (
               <Loader />
@@ -401,7 +401,10 @@ export const TextToImage = () => {
           ref={historyRef}
           className="col-span-12 md:col-span-4 lg:col-span-3 bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 flex flex-col h-[90vh]"
         >
-          <h3 className="text-xl font-bold mb-3">Generated Images</h3>
+          <h3 className="text-2xl font-extrabold text-center mb-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 drop-shadow-md tracking-wide">
+            Generated Images
+          </h3>
+
           <div className="space-y-3 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
             {history.length > 0 ? (
               history.map((entry) => (

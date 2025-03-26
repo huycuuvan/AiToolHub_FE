@@ -43,7 +43,7 @@ const TextToMusic = () => {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen text-white bg-gradient-to-br from-purple-300 via-purple-300 to-pink-200">
+    <div className="flex flex-col items-center min-h-screen text-white bg-gradient-to-br from-purple-900 via-purple-400 to-pink-200">
       <Navbar />
 
       <div className="flex-1 w-full flex items-center justify-center">

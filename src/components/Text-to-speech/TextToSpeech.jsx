@@ -594,7 +594,7 @@ const TextToSpeech = () => {
                   className={`w-full py-3 rounded-lg font-semibold text-white transition duration-300 ${
                     loading
                       ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-black hover:bg-gray-800"
+                      : "bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 shadow-md hover:shadow-lg"
                   }`}
                 >
                   {loading ? "Generating..." : "Generate"}

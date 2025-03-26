@@ -229,7 +229,7 @@ function TextAssistance() {
           <div className="absolute bottom-0 w-full p-4 border-t border-gray-700 bg-gray-900/60 backdrop-blur-lg">
             <button
               onClick={handleClearHistory}
-              className="w-full p-3 bg-red-600 rounded-lg hover:bg-red-700 transition text-white font-medium"
+              className="w-full p-3 bg-red-600 rounded-lg hover:bg-red-700 transition text-white font-medium bg-gradient-to-r from-red-700 to-orange-700 hover:from-red-600 hover:to-orange-600 shadow-md hover:shadow-lg"
             >
               Clear History
             </button>
@@ -319,7 +319,7 @@ function TextAssistance() {
           {/* New Chat Button */}
           <button
             onClick={startNewChat}
-            className="fixed bottom-20 right-6 p-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition shadow-lg z-10"
+            className="fixed bottom-20 right-6 p-3 bg-gradient-to-r from-lime-400 to-emerald-500 hover:from-lime-500 hover:to-emerald-600 shadow-md hover:shadow-lg rounded-full text-white"
           >
             New Chat
           </button>

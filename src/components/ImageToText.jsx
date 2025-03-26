@@ -389,7 +389,7 @@ export const ImageToText = () => {
             <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={clearAll}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200"
+                className="px-4 py-2 bg-white text-red-400 border border-purple-400 rounded-lg hover:bg-purple-50 transition font-semibold"
               >
                 Clear All
               </button>
@@ -399,7 +399,7 @@ export const ImageToText = () => {
                 className={`px-4 py-2 text-white rounded-lg transition duration-200 flex items-center gap-2 ${
                   loading
                     ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-indigo-600 hover:bg-indigo-700"
+                    : "bg-gradient-to-r from-rose-400 to-pink-300 hover:from-rose-500 hover:to-pink-400 shadow-md hover:shadow-lg"
                 }`}
               >
                 {loading ? (
