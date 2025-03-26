@@ -2,7 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { Navbar } from "../Navbar";
 import gsap from "gsap";
 import { toast } from "react-toastify";
-import { saveToHistory, getHistory } from "../../utils/localStorage";
+import {
+  saveToHistory,
+  getHistory,
+  deleteFromHistory,
+} from "../../utils/localStorage";
 import { formatDistanceToNow } from "date-fns";
 
 // Define voice options
@@ -43,7 +47,7 @@ const TextToSpeech = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [historyAudio, setHistoryAudio] = useState({}); // Store audio URLs for history entries
+  const [currentAudioTimestamp, setCurrentAudioTimestamp] = useState(null);
 
   const audioRef = useRef(null);
   const historyAudioRefs = useRef({}); // Refs for history audio elements
@@ -68,26 +72,14 @@ const TextToSpeech = () => {
     );
   }, []);
 
-  // Update audio current time and duration for main audio
+  // Timer to force re-render every 10 seconds for timestamp updates
   useEffect(() => {
-    const audio = audioRef.current;
-    if (audio) {
-      const updateTime = () => {
-        setCurrentTime(audio.currentTime);
-        setDuration(audio.duration || 0);
-      };
+    const interval = setInterval(() => {
+      setTick((prev) => prev + 1); // Increment tick to force re-render
+    }, 10000); // Update every 10 seconds
 
-      audio.addEventListener("timeupdate", updateTime);
-      audio.addEventListener("loadedmetadata", updateTime);
-      audio.addEventListener("ended", () => setIsPlaying(false));
-
-      return () => {
-        audio.removeEventListener("timeupdate", updateTime);
-        audio.removeEventListener("loadedmetadata", updateTime);
-        audio.removeEventListener("ended", () => setIsPlaying(false));
-      };
-    }
-  }, [generatedAudioUrl]);
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
 
   // Handle form submission for main generation
   const handleSubmit = async (e) => {
@@ -102,6 +94,7 @@ const TextToSpeech = () => {
     setCurrentTime(0);
     setDuration(0);
     setIsPlaying(false);
+    setCurrentAudioTimestamp(null);
 
     try {
       const selectedVoice = Object.values(VOICES).find((v) => v.name === voice);
@@ -132,8 +125,8 @@ const TextToSpeech = () => {
       const audioUrl = URL.createObjectURL(blob);
       setGeneratedAudioUrl(audioUrl);
 
-      // Save to history with all parameters
-      saveToHistory(input, voice, speed, stability, similarity);
+      // Save to history with all parameters, including the blob
+      await saveToHistory(input, voice, speed, stability, similarity, blob);
       setHistory(getHistory());
       toast.success("Speech generated successfully!");
     } catch (error) {
@@ -142,56 +135,23 @@ const TextToSpeech = () => {
       setLoading(false);
     }
   };
-
   // Handle playback for history entries
-  const handleHistoryPlayback = async (item, index) => {
-    // If audio is already generated for this history entry, play it
-    if (historyAudio[index]) {
-      const audio = historyAudioRefs.current[index];
-      if (audio) {
-        if (audio.paused) {
-          audio.play();
-        } else {
-          audio.pause();
-        }
+  const handleHistoryPlayback = (item, index) => {
+    const audio = historyAudioRefs.current[index];
+    if (audio) {
+      if (audio.paused) {
+        audio.play();
+      } else {
+        audio.pause();
       }
-      return;
     }
+  };
 
-    // Otherwise, regenerate the audio
-    try {
-      const selectedVoice = Object.values(VOICES).find(
-        (v) => v.name === item.voice
-      );
-      const response = await fetch(
-        "http://localhost:8080/api/tools/text-to-speech",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            input: item.text,
-            voice: selectedVoice.name,
-            speed: item.speed,
-            stability: item.stability,
-            similarity: item.similarity,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Server error:", errorData);
-        throw new Error(errorData.message || "Failed to generate speech");
-      }
-
-      const blob = await response.blob();
-      const audioUrl = URL.createObjectURL(blob);
-      setHistoryAudio((prev) => ({ ...prev, [index]: audioUrl }));
-    } catch (error) {
-      toast.error(error.message);
-    }
+  // Handle deletion of a history entry
+  const handleDeleteHistory = (index) => {
+    const updatedHistory = deleteFromHistory(index);
+    setHistory(updatedHistory);
+    toast.success("History entry deleted!");
   };
 
   // Toggle play/pause for the main generated audio
@@ -338,7 +298,12 @@ const TextToSpeech = () => {
                 <div className="flex items-center space-x-2">
                   <span className="w-3 h-3 rounded-full bg-orange-500"></span>
                   <span className="text-sm text-gray-600">
-                    {voice} • Created now
+                    {voice} •{" "}
+                    {currentAudioTimestamp
+                      ? formatDistanceToNow(new Date(currentAudioTimestamp), {
+                          addSuffix: true, // Adds "ago" automatically
+                        })
+                      : "Created now"}
                   </span>
                 </div>
                 <div className="flex-1 flex items-center space-x-2">
@@ -483,7 +448,7 @@ const TextToSpeech = () => {
                       className="w-full p-2 rounded-lg border border-gray-300 text-gray-600 focus:border-blue-500 focus:outline-none appearance-none"
                     >
                       {Object.values(VOICES).map((voice) => (
-                        <option key={voice.id} value={voice.name}>
+                        <option key={voice.name} value={voice.name}>
                           {voice.name}
                         </option>
                       ))}
@@ -687,6 +652,8 @@ const TextToSpeech = () => {
                                     setSpeed(item.speed || 1);
                                     setStability(item.stability || 0.5);
                                     setSimilarity(item.similarity || 0.75);
+                                    setGeneratedAudioUrl(item.audioData);
+                                    setCurrentAudioTimestamp(item.timestamp);
                                     setActiveTab("settings");
                                   }}
                                   className="flex-1"
@@ -756,16 +723,15 @@ const TextToSpeech = () => {
                                     </svg>
                                   </button>
                                   <a
-                                    href={historyAudio[`today-${index}`]}
+                                    href={item.audioData}
                                     download={`speech-${Date.now()}.mp3`}
                                     className={`text-gray-600 hover:text-gray-900 ${
-                                      !historyAudio[`today-${index}`]
+                                      !item.audioData
                                         ? "opacity-50 cursor-not-allowed"
                                         : ""
                                     }`}
                                     onClick={(e) =>
-                                      !historyAudio[`today-${index}`] &&
-                                      e.preventDefault()
+                                      !item.audioData && e.preventDefault()
                                     }
                                   >
                                     <svg
@@ -783,16 +749,35 @@ const TextToSpeech = () => {
                                       />
                                     </svg>
                                   </a>
+                                  <button
+                                    onClick={() => handleDeleteHistory(index)}
+                                    className="text-red-600 hover:text-red-800"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                      />
+                                    </svg>
+                                  </button>
                                 </div>
                               </div>
-                              {historyAudio[`today-${index}`] && (
+                              {item.audioData && (
                                 <audio
                                   ref={(el) =>
                                     (historyAudioRefs.current[
                                       `today-${index}`
                                     ] = el)
                                   }
-                                  src={historyAudio[`today-${index}`]}
+                                  src={item.audioData}
                                   className="hidden"
                                 />
                               )}
@@ -818,6 +803,8 @@ const TextToSpeech = () => {
                                     setSpeed(item.speed || 1);
                                     setStability(item.stability || 0.5);
                                     setSimilarity(item.similarity || 0.75);
+                                    setGeneratedAudioUrl(item.audioData);
+                                    setCurrentAudioTimestamp(item.timestamp);
                                     setActiveTab("settings");
                                   }}
                                   className="flex-1"
@@ -887,16 +874,15 @@ const TextToSpeech = () => {
                                     </svg>
                                   </button>
                                   <a
-                                    href={historyAudio[`yesterday-${index}`]}
+                                    href={item.audioData}
                                     download={`speech-${Date.now()}.mp3`}
                                     className={`text-gray-600 hover:text-gray-900 ${
-                                      !historyAudio[`yesterday-${index}`]
+                                      !item.audioData
                                         ? "opacity-50 cursor-not-allowed"
                                         : ""
                                     }`}
                                     onClick={(e) =>
-                                      !historyAudio[`yesterday-${index}`] &&
-                                      e.preventDefault()
+                                      !item.audioData && e.preventDefault()
                                     }
                                   >
                                     <svg
@@ -914,16 +900,35 @@ const TextToSpeech = () => {
                                       />
                                     </svg>
                                   </a>
+                                  <button
+                                    onClick={() => handleDeleteHistory(index)}
+                                    className="text-red-600 hover:text-red-800"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                      />
+                                    </svg>
+                                  </button>
                                 </div>
                               </div>
-                              {historyAudio[`yesterday-${index}`] && (
+                              {item.audioData && (
                                 <audio
                                   ref={(el) =>
                                     (historyAudioRefs.current[
                                       `yesterday-${index}`
                                     ] = el)
                                   }
-                                  src={historyAudio[`yesterday-${index}`]}
+                                  src={item.audioData}
                                   className="hidden"
                                 />
                               )}
