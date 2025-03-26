@@ -300,9 +300,8 @@ const TextToSpeech = () => {
                   <span className="text-sm text-gray-600">
                     {voice} •{" "}
                     {currentAudioTimestamp
-                      ? formatDistanceToNow(new Date(currentAudioTimestamp), {
-                          addSuffix: true, // Adds "ago" automatically
-                        })
+                      ? formatDistanceToNow(new Date(currentAudioTimestamp)) +
+                        " ago"
                       : "Created now"}
                   </span>
                 </div>
@@ -595,7 +594,7 @@ const TextToSpeech = () => {
                   className={`w-full py-3 rounded-lg font-semibold text-white transition duration-300 ${
                     loading
                       ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-500 hover:bg-blue-600"
+                      : "bg-black hover:bg-gray-800"
                   }`}
                 >
                   {loading ? "Generating..." : "Generate"}
