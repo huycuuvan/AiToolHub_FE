@@ -245,7 +245,7 @@ export const Login = () => {
                   />
                   <label
                     htmlFor="rememberMe"
-                    className="text-sm text-gray-300 font-normal"
+                    className="text-sm text-white font-normal"
                   >
                     Remember me for 30 days
                   </label>

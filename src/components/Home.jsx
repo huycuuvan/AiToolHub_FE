@@ -63,6 +63,7 @@ export const Home = () => {
       "bg-hero-pattern",
       "bg-hero-pattern-1",
       "bg-hero-pattern-2",
+      "bg-hero-pattern-3",
     ];
     let currentIndex = 0;
 
@@ -95,13 +96,13 @@ export const Home = () => {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-black via-gray-600 to-black">
+    <div className="relative min-h-screen bg-hero-pattern-3 bg-no-repeat bg-cover bg-center">
       {/* Hero Section */}
       <div className="relative h-screen overflow-hidden">
         {/* Background with floating paths animation */}
         <div
           ref={heroRef}
-          className="absolute h-full inset-0 bg-hero-pattern bg-cover bg-no-repeat bg-center z-0 blur"
+          className="absolute h-full inset-0 bg-hero-pattern bg-cover bg-no-repeat bg-center z-0"
           style={{
             maskImage:
               "linear-gradient(to bottom, black 90%, transparent 100%)",

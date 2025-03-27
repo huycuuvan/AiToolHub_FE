@@ -85,7 +85,7 @@ const Highlights = () => {
       id="highlights"
       className="  flex flex-col items-center gap-10 h-auto  w-2/3 justify-center m-auto"
     >
-      <div className="bg-red-glow-gradient w-full">
+      <div className="bg-white-glow-gradient w-full">
         <h2 className="text-4xl">The only AI Image Generator you need</h2>
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 text-center mx-5  rounded-lg">
           {cards.map((card, index) => (

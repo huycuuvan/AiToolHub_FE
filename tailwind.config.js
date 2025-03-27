@@ -24,9 +24,10 @@ export default {
         jersey: ['"Roboto"', "sans-serif"],
       },
       backgroundImage: {
-        "hero-pattern": "url('/assets/images/banner-1.jpg')",
-        "hero-pattern-1": "url('/assets/images/2b.jpg')",
-        "hero-pattern-2": "url('/assets/images/makima.png')",
+        "hero-pattern": "url('/assets/images/banner-2.jpg')",
+        "hero-pattern-1": "url('/assets/images/banner-3.jpg')",
+        "hero-pattern-2": "url('/assets/images/banner-4.jpg')",
+        "hero-pattern-3": "url('/assets/images/bg-home.jpg')",
         "glow-gradient":
           "radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%)",
         "blue-glow-gradient":
