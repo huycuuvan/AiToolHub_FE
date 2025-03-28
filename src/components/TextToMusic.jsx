@@ -50,7 +50,7 @@ const TextToMusic = () => {
         "https://api-inference.huggingface.co/models/facebook/musicgen-small",
         {
           headers: {
-            Authorization: "Bearer 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",
+            Authorization: "Bearer ",
             "Content-Type": "application/json",
           },
           method: "POST",
