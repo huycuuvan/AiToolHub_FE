@@ -29,6 +29,9 @@ const VOICES = {
   GEORGE: { name: "George" },
   PAUL: { name: "Paul" },
   GIGI: { name: "Gigi" },
+  HUYEN_TRANG: { name: "Huyen Trang" },
+  LY_HAI: { name: "Ly Hai" },
+  TRAN_KIM_HUNG: { name: "Tran Kim Hung" },
   SANTA_CLAUS: { name: "Santa Claus" },
 };
 
