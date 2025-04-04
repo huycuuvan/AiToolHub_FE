@@ -7,6 +7,8 @@ import { GoogleLogin } from "@react-oauth/google";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import gsap from "gsap";
+
 
 // Define icons
 const Icons = {
@@ -49,6 +51,7 @@ export const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [backgroundIndex, setBackgroundIndex] = useState(0);
   const heroRef = useRef(null);
+  const logoRef = useRef(null); // Ref for the "AI Tool Hub" text
 
   // Use react-hook-form for form handling
   const {
@@ -141,9 +144,52 @@ export const Login = () => {
     }
   };
 
+  // Handle navigation to home
+  const handleGoHome = () => {
+    navigate("/"); // Navigate to home page
+  };
+
+  // GSAP Animation for the Logo
+  useEffect(() => {
+    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1 });
+    tl.fromTo(
+      logoRef.current,
+      { y: 10, opacity: 0, scale: 0.95, rotation: -2 },
+      {
+        y: -10,
+        opacity: 1,
+        scale: 1.05,
+        rotation: 2,
+        ease: "elastic.out(1, 0.5)",
+        duration: 1.5,
+      }
+    )
+      .to(logoRef.current, {
+        y: 0,
+        scale: 1,
+        rotation: 0,
+        ease: "power2.inOut",
+        duration: 1,
+      })
+      .to(logoRef.current, {
+        boxShadow: "0 0 15px rgba(255, 255, 255, 0.6)",
+        scale: 1.1,
+        opacity: 0.95,
+        duration: 0.8,
+        yoyo: true,
+        repeat: 1,
+      })
+      .to(logoRef.current, {
+        boxShadow: "0 0 5px rgba(255, 255, 255, 0.3)",
+        scale: 1,
+        opacity: 1,
+        duration: 0.7,
+      });
+  }, []);
+
   return (
     <div className="flex min-h-screen w-full">
-      {/* Left side - Hero/Slideshow */}
+      {/* Left side - Hero/Slideshow with AI Tool Hub text */}
       <motion.div
         ref={heroRef}
         className={`hidden md:flex w-1/2 bg-cover bg-center relative ${backgrounds[backgroundIndex]}`}
@@ -153,6 +199,31 @@ export const Login = () => {
         key={backgroundIndex}
       >
         <div className="absolute inset-0 bg-black/50" />
+        
+        {/* AI Tool Hub Text as Link to Home with Animation */}
+        <motion.button
+          ref={logoRef}
+          onClick={handleGoHome}
+          className="absolute top-4 left-4 text-white text-2xl font-bold px-4 py-2 rounded-md transition duration-300 z-20 logo-title"
+          style={{
+            fontFamily: "'Poppins', sans-serif", // Đồng bộ font chữ
+            background: "rgba(0, 0, 0, 0.5)", // Nền trong suốt giống Navbar
+            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.3)", // Hiệu ứng bóng nhẹ
+            letterSpacing: "1px", // Khoảng cách chữ vừa phải
+            textTransform: "uppercase", // Viết hoa toàn bộ chữ
+            cursor: "pointer",
+          }}
+          whileHover={{
+            scale: 1.1, // Phóng to nhẹ khi hover
+            boxShadow: "0 8px 20px rgba(255, 255, 255, 0.5)", // Tăng hiệu ứng bóng
+          }}
+          whileTap={{
+            scale: 0.95, // Thu nhỏ nhẹ khi click
+          }}
+        >
+          AI Tool Hub
+        </motion.button>
+
         <div className="relative z-10 flex flex-col items-center justify-center w-full h-full text-white p-8">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
