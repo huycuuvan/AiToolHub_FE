@@ -91,7 +91,7 @@ export const Navbar = () => {
 
         {user ? (
           <div className="flex items-center gap-4">
-            <span className="text-lg text-gray-200">{user.username}</span>
+            <span className="text-lg text-red">{user.username}</span>
             <button
               onClick={logout}
               className="px-4 py-2 bg-red-600 text-white rounded-lg"

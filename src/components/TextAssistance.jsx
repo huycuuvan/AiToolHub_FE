@@ -259,7 +259,7 @@ function TextAssistance() {
                   } mb-4`}
                 >
                   <div
-                    className={`max-w-[70%] p-4 rounded-lg shadow-md select-text break-words ${
+                    className={`max-w-[70%] p-4 overflow-x-auto rounded-lg shadow-md select-text break-words ${
                       msg.role === "user"
                         ? "bg-gray-800 text-white"
                         : "bg-gray-700 text-white"
@@ -272,8 +272,8 @@ function TextAssistance() {
                 </div>
               ))}
               {loading && (
-                <div className="flex justify-start mb-4">
-                  <div className="bg-gray-700 p-4 rounded-lg shadow-md max-w-[70%]">
+                <div className="flex justify-start mb-4 ">
+                  <div className="bg-gray-700 p-4 overflow-x-auto rounded-lg shadow-md max-w-[70%] ">
                     <span className="text-gray-400 animate-pulse">
                       Thinking...
                     </span>
