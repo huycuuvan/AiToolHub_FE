@@ -11,6 +11,8 @@ import ImageToText from "./components/ImageToText";
 import { SignUp } from "./components/SignUp";
 import { ToastContainer } from "react-toastify";
 import TextToSpeech from "./components/Text-to-speech/TextToSpeech";
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 
 const App = () => {
   const clientId =
@@ -30,6 +32,8 @@ const App = () => {
             <Route path="/text-to-speech" element={<TextToSpeech />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           </Routes>
         </AuthProvider>
       </GoogleOAuthProvider>
