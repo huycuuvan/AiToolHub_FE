@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ToastContainer, toast } from "react-toastify";
+import {  toast } from "react-toastify";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }).min(1, { message: "Email is required" }),

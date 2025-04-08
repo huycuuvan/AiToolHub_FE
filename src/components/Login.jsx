@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import gsap from "gsap";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 
 // Define icons
 const Icons = {
@@ -185,11 +185,6 @@ export const Login = () => {
       });
   }, []);
 
-  // Test toast to verify sonner is working
-  useEffect(() => {
-    console.log("Login component mounted");
-    toast.success("Test toast is working!"); // Test sonner
-  }, []);
 
   return (
     <div className="flex min-h-screen w-full">

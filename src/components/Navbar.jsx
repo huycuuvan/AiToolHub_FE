@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState, useContext } from "react";
 import gsap from "gsap";
 import { AuthContext } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 export const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -93,7 +94,11 @@ export const Navbar = () => {
           <div className="flex items-center gap-4">
             <span className="text-lg text-gray-200">{user.username}</span>
             <button
-              onClick={logout}
+              onClick={() => {
+                logout(); // Gọi hàm logout
+                toast.success("Logout successful!", {
+                });
+              }}
               className="px-4 py-2 bg-red-600 text-white rounded-lg"
             >
               Logout
