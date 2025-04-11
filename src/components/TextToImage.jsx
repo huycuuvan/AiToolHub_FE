@@ -17,8 +17,11 @@ export const TextToImage = () => {
   );
   const [history, setHistory] = useState([]);
   const [modalImage, setModalImage] = useState(null);
-  const [generationTime, setGenerationTime] = useState(null); // Track generation time
-  const [numInferenceSteps, setNumInferenceSteps] = useState(28); // Default 28
+  const [generationTime, setGenerationTime] = useState(null);
+  const [numInferenceSteps, setNumInferenceSteps] = useState(28);
+  const [isGuideVisible, setIsGuideVisible] = useState(false); // State to control guide visibility
+
+  const guideRef = useRef(null); // Ref for the guide section
 
   const models = [
     {
@@ -88,6 +91,24 @@ export const TextToImage = () => {
   const imageRef = useRef(null);
   const historyRef = useRef(null);
 
+  // Handle scroll to show/hide the guide
+  useEffect(() => {
+    const handleScroll = () => {
+      if (guideRef.current) {
+        const guidePosition = guideRef.current.getBoundingClientRect().top;
+        const windowHeight = window.innerHeight;
+        if (guidePosition < windowHeight * 0.8) {
+          setIsGuideVisible(true);
+        } else {
+          setIsGuideVisible(false);
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   useEffect(() => {
     try {
       const savedHistory = JSON.parse(
@@ -98,7 +119,7 @@ export const TextToImage = () => {
       }
     } catch (e) {
       console.error("Error parsing localStorage imageHistory:", e);
-      setHistory([]); // Clear if invalid
+      setHistory([]);
     }
 
     // GSAP animations
@@ -145,12 +166,9 @@ export const TextToImage = () => {
 
     setLoading(true);
     setImageSrc("");
-    const startTime = Date.now(); // Start timer
+    const startTime = Date.now();
 
-    // Get the negative prompt for the selected style
     const negativePrompt = negativePrompts[selectedStyle] || "";
-
-    // Combine the user input with the selected style
     const combinedInput =
       selectedStyle === "Default"
         ? input
@@ -158,33 +176,32 @@ export const TextToImage = () => {
 
     try {
       const payload = {
-        input: combinedInput, // Send the combined input
+        input: combinedInput,
         negativePrompt,
-        numInferenceSteps, // Include the selected inference steps
+        numInferenceSteps,
       };
 
       const response = await axiosInstance.post(apiEndpoint, payload, {
         responseType: "blob",
       });
 
-      // Convert Blob to Base64 for persistent storage
       const reader = new FileReader();
       reader.readAsDataURL(response.data);
       reader.onloadend = () => {
-        const endTime = Date.now(); // End timer
-        const duration = (endTime - startTime) / 1000; // Duration in seconds
+        const endTime = Date.now();
+        const duration = (endTime - startTime) / 1000;
         setGenerationTime(duration);
 
         const newImage = reader.result;
         const historyEntry = {
           id: Date.now(),
           image: newImage,
-          prompt: input, // Store the original user input
-          style: selectedStyle, // Store the selected style for display
-          negativePrompt, // Store negative prompt in history
-          numInferenceSteps, // Store inference steps in history
+          prompt: input,
+          style: selectedStyle,
+          negativePrompt,
+          numInferenceSteps,
           timestamp: new Date().toISOString(),
-          generationTime: duration, // Store duration in history
+          generationTime: duration,
         };
 
         const updatedHistory = [historyEntry, ...history];
@@ -221,7 +238,6 @@ export const TextToImage = () => {
           ref={formRef}
           className="col-span-12 md:col-span-4 lg:col-span-3 bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 flex flex-col justify-between"
         >
-          {/* Models Section */}
           <h3 className="text-xl font-bold">Choose a Model</h3>
           <div className="grid grid-cols-1 gap-3 mt-3">
             {models.map((model) => (
@@ -239,10 +255,8 @@ export const TextToImage = () => {
             ))}
           </div>
 
-          {/* Styles Section (Flexible Height) */}
           <div className="flex-grow mt-6 min-h-[300px] flex flex-col">
             <h3 className="text-xl font-bold">Choose a Style</h3>
-
             <div className="mt-3 p-3 border border-gray-700 rounded-xl overflow-y-auto max-h-[250px] scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
               <div className="grid grid-cols-3 gap-4">
                 {styles.map((style) => (
@@ -282,22 +296,16 @@ export const TextToImage = () => {
             </div>
           </div>
 
-          {/* Inference Steps Slider */}
           <div className="mt-6">
             <h3 className="text-xl font-bold">Inference Steps</h3>
             <div className="relative mt-4 h-6">
-              {/* Track Background */}
               <div className="absolute top-1/2 w-full h-2 bg-gray-300 rounded-full transform -translate-y-1/2" />
-
-              {/* Animated Fill */}
               <motion.div
                 className="absolute top-1/2 h-2 bg-blue-600 rounded-full transform -translate-y-1/2"
                 initial={false}
                 animate={{ width: `${((numInferenceSteps - 1) / 49) * 100}%` }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               />
-
-              {/* Range Input (Transparent) */}
               <input
                 type="range"
                 min="1"
@@ -307,8 +315,6 @@ export const TextToImage = () => {
                 className="w-full h-6 bg-transparent appearance-none pointer-events-auto z-10 relative"
                 style={{ WebkitAppearance: "none" }}
               />
-
-              {/* Thumb Styling */}
               <style jsx>{`
                 input[type="range"]::-webkit-slider-thumb {
                   -webkit-appearance: none;
@@ -322,7 +328,6 @@ export const TextToImage = () => {
                   position: relative;
                   z-index: 10;
                 }
-
                 input[type="range"]::-moz-range-thumb {
                   height: 20px;
                   width: 20px;
@@ -333,25 +338,21 @@ export const TextToImage = () => {
                   position: relative;
                   z-index: 10;
                 }
-
                 input[type="range"]::-webkit-slider-runnable-track {
                   height: 6px;
                   background: transparent;
                 }
-
                 input[type="range"]::-moz-range-track {
                   height: 6px;
                   background: transparent;
                 }
               `}</style>
             </div>
-
             <div className="text-center text-white mt-2">
               Selected: {numInferenceSteps} steps
             </div>
           </div>
 
-          {/* Prompt Input & Button (Fixed at Bottom) */}
           <div className="mt-4">
             <textarea
               value={input}
@@ -378,7 +379,7 @@ export const TextToImage = () => {
         <div className="col-span-12 md:col-span-5 lg:col-span-6 flex items-center justify-center">
           <div
             ref={imageRef}
-            className="bg-gray-800 p-8 lg:p-10 rounded-xl border border-gray-600 w-full max-w-[600px] h-[500px] flex items-center justify-center "
+            className="bg-gray-800 p-8 lg:p-10 rounded-xl border border-gray-600 w-full max-w-[600px] h-[500px] flex items-center justify-center"
           >
             {loading ? (
               <Loader />
@@ -404,7 +405,6 @@ export const TextToImage = () => {
           <h3 className="text-2xl font-extrabold text-center mb-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 drop-shadow-md tracking-wide">
             Generated Images
           </h3>
-
           <div className="space-y-3 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
             {history.length > 0 ? (
               history.map((entry) => (
@@ -467,15 +467,140 @@ export const TextToImage = () => {
         </div>
       </div>
 
+      {/* Text Guide Section */}
+      <motion.div
+        ref={guideRef}
+        initial={{ opacity: 0, y: 50 }}
+        animate={isGuideVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-4xl mx-auto p-6 mt-10 mb-10 bg-gray-800 rounded-xl shadow-lg border border-gray-700 text-white"
+      >
+        <h2 className="text-3xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">
+          AI Image Generator Guide
+        </h2>
+
+        <p className="mb-4">
+          Bring your imagination to life with our Free Online AI Image
+          Generator. Simply type your ideas, and watch as they transform into
+          captivating images in seconds. Whether you're a content creator,
+          designer, or entrepreneur, our AI-powered tool helps you generate
+          unique visuals tailored to your needs.
+        </p>
+
+        <h3 className="text-xl font-semibold mb-2">
+          Turn Words into Art with AI
+        </h3>
+        <p className="mb-4">
+          Our AI Image Generator uses advanced machine learning algorithms to
+          convert text descriptions into high-quality images. From abstract
+          concepts to detailed scenes, the possibilities are endless. Describe
+          what you envision, and let our AI bring it to life.
+        </p>
+
+        <h3 className="text-xl font-semibold mb-2">
+          Features of Our AI Image Generator
+        </h3>
+        <ul className="list-disc list-inside mb-4">
+          <li>
+            Multiple Styles and Modes: Choose from a variety of artistic styles
+            like photorealistic, watercolor, abstract, fantasy, and more.
+          </li>
+          <li>
+            Customization Options: Adjust colors, lighting, and composition to
+            fine-tune your images.
+          </li>
+          <li>
+            High-Resolution Output: Generate images suitable for web, print, or
+            social media.
+          </li>
+          <li>
+            User-Friendly Interface: No technical skills required—just enter
+            your text prompt and select your preferences.
+          </li>
+        </ul>
+
+        <h3 className="text-xl font-semibold mb-2">
+          How to Use the AI Image Generator
+        </h3>
+        <ol className="list-decimal list-inside mb-4">
+          <li>
+            <strong>Enter Your Text Prompt:</strong> Start by typing a
+            description of the image you want to create. Be as detailed or as
+            simple as you like. Example: "A serene sunset over a mountain lake
+            with reflection."
+          </li>
+          <li>
+            <strong>Select Style and Settings:</strong> Choose an art style that
+            matches your vision—Photorealistic, Illustration, Abstract, Fantasy,
+            or Modern Art. Adjust settings like color palette, aspect ratio, and
+            more to customize your image.
+          </li>
+          <li>
+            <strong>Generate and Refine:</strong> Click "Generate Image" to see
+            your creation. If you're not satisfied, tweak your prompt or
+            settings and try again.
+          </li>
+          <li>
+            <strong>Download and Share:</strong> Once you're happy with your
+            image, download it in your preferred format or share it directly on
+            social media.
+          </li>
+        </ol>
+
+        <h3 className="text-xl font-semibold mb-2">
+          Why Use Our AI Image Generator?
+        </h3>
+        <ul className="list-disc list-inside mb-4">
+          <li>
+            <strong>For Content Creators:</strong> Enhance your blogs, articles,
+            and social media posts with unique visuals that grab attention.
+          </li>
+          <li>
+            <strong>For Designers:</strong> Quickly prototype ideas or generate
+            inspiration for your next project without starting from scratch.
+          </li>
+          <li>
+            <strong>For Entrepreneurs:</strong> Create eye-catching graphics for
+            ads, presentations, and promotional materials effortlessly.
+          </li>
+        </ul>
+
+        <h3 className="text-xl font-semibold mb-2">
+          Tips for Creating Amazing AI-Generated Images
+        </h3>
+        <ul className="list-disc list-inside mb-4">
+          <li>
+            <strong>Be Specific:</strong> The more details you include, the
+            better the AI understands your request.
+          </li>
+          <li>
+            <strong>Experiment with Styles:</strong> Try different art styles to
+            see which one best suits your needs.
+          </li>
+          <li>
+            <strong>Use Descriptive Keywords:</strong> Words like "digital art,"
+            "oil painting," or "minimalist" can influence the style.
+          </li>
+          <li>
+            <strong>Adjust Settings:</strong> Customize color filters, lighting,
+            and aspect ratios for a unique touch.
+          </li>
+        </ul>
+
+        <p className="text-center font-semibold">
+          Unleash your creativity and start generating stunning images today!
+        </p>
+      </motion.div>
+
       {/* Modal for Viewing Image */}
       {modalImage && (
         <div
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
-          onClick={() => setModalImage(null)} // Click anywhere to close
+          onClick={() => setModalImage(null)}
         >
           <div
             className="relative bg-gray-800 p-4 rounded-xl max-w-3xl w-full"
-            onClick={(e) => e.stopPropagation()} // Prevent modal close when clicking on the image
+            onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setModalImage(null)}
