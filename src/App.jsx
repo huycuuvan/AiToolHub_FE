@@ -13,6 +13,7 @@ import { ToastContainer } from "react-toastify";
 import TextToSpeech from "./components/Text-to-speech/TextToSpeech";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
+import Pricing from "./components/Pricing";
 
 const App = () => {
   const clientId =
@@ -34,6 +35,7 @@ const App = () => {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/pricing" element={<Pricing />} />
           </Routes>
         </AuthProvider>
       </GoogleOAuthProvider>

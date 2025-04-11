@@ -185,12 +185,6 @@ export const Login = () => {
       });
   }, []);
 
-  // Test toast to verify sonner is working
-  useEffect(() => {
-    console.log("Login component mounted");
-    toast.success("Test toast is working!"); // Test sonner
-  }, []);
-
   return (
     <div className="flex min-h-screen w-full">
       {/* Left side - Hero/Slideshow with AI Tool Hub text */}
