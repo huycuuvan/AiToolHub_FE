@@ -2,6 +2,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState, useContext } from "react";
 import gsap from "gsap";
 import { AuthContext } from "../context/AuthContext";
+import { FaUserCircle } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 export const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -117,24 +119,56 @@ export const Navbar = () => {
           </Link>
         </div>
 
-        {user ? (
-          <div className="flex items-center gap-4">
-            <span className="text-lg text-gray-200">{user.username}</span>
-            <button
-              onClick={logout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg"
-            >
-              Logout
-            </button>
-          </div>
-        ) : (
+        {/* Right side: Pricing + User/Login */}
+        <div className="flex items-center gap-6 ml-auto">
+          {/* Pricing */}
           <Link
-            to="/login"
-            className="text-xl text-gray-200 hover:text-white transition-all"
+            to="/pricing"
+            className="text-xl text-gray-200 hover:text-white"
           >
-            Login
+            Pricing
           </Link>
-        )}
+
+          {/* User icon or login */}
+          {user ? (
+            <div className="relative">
+              <button
+                onClick={() => setMenuOpen((prev) => !prev)}
+                className="user-icon text-white text-3xl"
+              >
+                <FaUserCircle />
+              </button>
+              {menuOpen && (
+                <div className="dropdown-menu absolute right-0 mt-2 bg-white text-black rounded-lg shadow-md w-48 py-2 z-50">
+                  <div className="px-4 py-2 font-semibold">{user.username}</div>
+                  <Link
+                    to="/billing"
+                    className="block px-4 py-2 hover:bg-gray-100"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    View Billing
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      toast.success("Logged out successfully")
+                    }}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="text-xl px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+            >
+              Login
+            </Link>
+          )}
+        </div>
       </nav>
     </header>
   );
