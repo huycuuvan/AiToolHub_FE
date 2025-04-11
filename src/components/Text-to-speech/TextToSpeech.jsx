@@ -217,52 +217,16 @@ const TextToSpeech = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-200 to-blue-500">
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-700 to-black ">
       <Navbar />
-      <div className="pt-20 px-4 max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h1 ref={titleRef} className="text-2xl font-semibold text-gray-900">
+      <div className="pt-20 px-4 max-w-7xl mx-auto ">
+        <div className="flex justify-between items-center mb-4 ">
+          <h1 ref={titleRef} className="text-2xl font-semibold text-white-900">
             Text to Speech
           </h1>
-          <div className="flex space-x-2">
-            <button className="text-gray-600 hover:text-gray-900 text-sm flex items-center">
-              <svg
-                className="w-4 h-4 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                />
-              </svg>
-              Feedback
-            </button>
-            <button className="text-gray-600 hover:text-gray-900 text-sm flex items-center">
-              <svg
-                className="w-4 h-4 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              Documentation
-            </button>
-          </div>
         </div>
 
-        <div ref={containerRef} className="flex flex-col md:flex-row gap-6">
+        <div ref={containerRef} className="flex flex-col md:flex-row gap-6 ">
           {/* Left Section: Textarea and Generated Audio */}
           <div className="w-full md:w-2/3">
             <form onSubmit={handleSubmit}>
@@ -955,7 +919,7 @@ const TextToSpeech = () => {
           appearance: none;
           width: 16px;
           height: 16px;
-          background: #fff;
+          background: #1f2937;
           border: 2px solid #007bff;
           border-radius: 50%;
           cursor: pointer;
@@ -963,7 +927,7 @@ const TextToSpeech = () => {
         input[type="range"]::-moz-range-thumb {
           width: 16px;
           height: 16px;
-          background: #fff;
+          background: #1f2937;
           border: 2px solid #007bff;
           border-radius: 50%;
           cursor: pointer;
