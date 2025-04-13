@@ -2,9 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import gsap from "gsap";
 import { Navbar } from "./Navbar";
-import axios from "axios";
+import axiosInstance from "../api";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
 
 function TextAssistance() {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -12,11 +17,15 @@ function TextAssistance() {
   const [chatHistories, setChatHistories] = useState([]);
   const [activeHistoryIndex, setActiveHistoryIndex] = useState(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState(
+    localStorage.getItem("currentConversationId") || null
+  );
 
   const titleRef = useRef(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  // GSAP animation for title
   useEffect(() => {
     gsap.fromTo(
       titleRef.current,
@@ -25,22 +34,105 @@ function TextAssistance() {
     );
   }, []);
 
+  // Persist currentConversationId
   useEffect(() => {
-    const storedHistories = JSON.parse(
-      localStorage.getItem("chatHistories") || "[]"
-    );
-    // Thêm timestamp nếu chưa có (để hỗ trợ group by date)
-    const updatedHistories = storedHistories.map((history) => ({
-      ...history,
-      timestamp: history.timestamp || new Date().toISOString(), // Thêm timestamp mặc định nếu chưa có
-    }));
-    setChatHistories(updatedHistories);
-    if (updatedHistories.length > 0) {
-      setActiveHistoryIndex(0);
-      setMessages(updatedHistories[0].messages);
+    if (currentConversationId) {
+      localStorage.setItem("currentConversationId", currentConversationId);
+    } else {
+      localStorage.removeItem("currentConversationId");
     }
-  }, []);
+  }, [currentConversationId]);
 
+  // Fetch chat history from backend
+  useEffect(() => {
+    const fetchHistory = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please log in to view chat history.");
+        navigate("/login");
+        return;
+      }
+
+      try {
+        const response = await axiosInstance.get("/api/tools/history/chatbot", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Group messages by conversation_id
+        const historyMap = new Map();
+        response.data.forEach((entry) => {
+          if (!entry.conversationId) return;
+
+          const history = historyMap.get(entry.conversationId) || {
+            id: entry.conversationId,
+            title:
+              entry.input.substring(0, 50) +
+              (entry.input.length > 50 ? "..." : ""),
+            messages: [],
+            timestamp: entry.timestamp,
+            backendIds: [],
+          };
+
+          // Append messages in order
+          history.messages.push(
+            { role: "user", text: entry.input },
+            { role: "model", text: entry.response }
+          );
+          history.backendIds.push(entry.id);
+          if (
+            !history.timestamp ||
+            new Date(entry.timestamp) > new Date(history.timestamp)
+          ) {
+            history.timestamp = entry.timestamp;
+          }
+
+          historyMap.set(entry.conversationId, history);
+        });
+
+        // Sort histories newest first
+        const groupedHistories = Array.from(historyMap.values()).sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
+        setChatHistories(groupedHistories);
+
+        // Restore active conversation
+        if (currentConversationId && groupedHistories.length > 0) {
+          const activeHistory = groupedHistories.find(
+            (h) => h.id === currentConversationId
+          );
+          if (activeHistory) {
+            setActiveHistoryIndex(groupedHistories.indexOf(activeHistory));
+            setMessages(activeHistory.messages);
+          } else {
+            setActiveHistoryIndex(0);
+            setMessages(groupedHistories[0]?.messages || []);
+            setCurrentConversationId(groupedHistories[0]?.id || null);
+          }
+        } else if (groupedHistories.length > 0) {
+          setActiveHistoryIndex(0);
+          setMessages(groupedHistories[0].messages);
+          setCurrentConversationId(groupedHistories[0].id);
+        }
+      } catch (err) {
+        console.error("Error fetching chat history:", err);
+        let errorMessage = "Failed to load chat history.";
+        if (err.response) {
+          if (err.response.status === 401) {
+            errorMessage = "Session expired. Please log in again.";
+            localStorage.removeItem("token");
+            navigate("/login");
+          } else if (err.response.data?.error) {
+            errorMessage = err.response.data.error;
+          }
+        }
+        toast.error(errorMessage);
+      }
+    };
+
+    fetchHistory();
+  }, [navigate]);
+
+  // Auto-scroll to latest message
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -52,6 +144,13 @@ function TextAssistance() {
   const handleSend = async () => {
     if (!input.trim()) return;
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please log in to send messages.");
+      navigate("/login");
+      return;
+    }
+
     const userMessage = { role: "user", text: input };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
@@ -60,97 +159,157 @@ function TextAssistance() {
     setError(null);
 
     try {
-      const response = await axios.post(
-        "http://localhost:8080/api/tools/chatbot",
-        {
-          messages: updatedMessages,
-        }
-      );
-
-      let aiText;
-      if (response.data && typeof response.data === "object") {
-        aiText = response.data.extractedText || "No response from AI";
-      } else {
-        aiText = "Unexpected response format";
+      let conversationId = currentConversationId;
+      if (!conversationId) {
+        conversationId = uuidv4();
+        setCurrentConversationId(conversationId);
       }
 
+      const response = await axiosInstance.post(
+        "/api/tools/chatbot",
+        { messages: updatedMessages, conversationId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const aiText = response.data?.extractedText || "No response from AI";
       const aiResponse = { role: "model", text: aiText };
       const finalMessages = [...updatedMessages, aiResponse];
       setMessages(finalMessages);
 
-      const conversationTitle =
-        input.substring(0, 50) + (input.length > 50 ? "..." : "");
       const updatedHistories = [...chatHistories];
+      const existingHistoryIndex = updatedHistories.findIndex(
+        (h) => h.id === conversationId
+      );
 
-      if (activeHistoryIndex !== null && updatedHistories[activeHistoryIndex]) {
-        updatedHistories[activeHistoryIndex].messages = finalMessages;
+      if (existingHistoryIndex !== -1) {
+        updatedHistories[existingHistoryIndex].messages = finalMessages;
+        updatedHistories[existingHistoryIndex].timestamp =
+          new Date().toISOString();
+        updatedHistories[existingHistoryIndex].backendIds.push(
+          response.data?.id || Date.now()
+        );
+        setActiveHistoryIndex(existingHistoryIndex);
       } else {
-        // Thêm mục mới vào đầu danh sách với timestamp
-        updatedHistories.unshift({
-          title: conversationTitle,
+        const newHistory = {
+          id: conversationId,
+          title: input.substring(0, 50) + (input.length > 50 ? "..." : ""),
           messages: finalMessages,
-          timestamp: new Date().toISOString(), // Thêm timestamp để nhóm theo ngày
-        });
-        setActiveHistoryIndex(0); // Đặt mục mới nhất làm active
+          timestamp: new Date().toISOString(),
+          backendIds: [response.data?.id || Date.now()],
+        };
+        updatedHistories.unshift(newHistory);
+        setChatHistories(updatedHistories);
+        setActiveHistoryIndex(0);
       }
-
-      setChatHistories(updatedHistories);
-      localStorage.setItem("chatHistories", JSON.stringify(updatedHistories));
     } catch (err) {
-      setError("Error calling AI: " + (err.response?.data || err.message));
+      console.error("Error calling chatbot API:", err);
+      let errorMessage = "Error calling AI.";
+      if (err.response) {
+        if (err.response.status === 401) {
+          errorMessage = "Session expired. Please log in again.";
+          localStorage.removeItem("token");
+          navigate("/login");
+        } else if (err.response.data?.error) {
+          errorMessage = err.response.data.error;
+        }
+      }
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") handleSend();
+    if (e.key === "Enter" && !loading) handleSend();
   };
 
   const handleHistorySelect = (index) => {
     setActiveHistoryIndex(index);
     setMessages(chatHistories[index]?.messages || []);
+    setCurrentConversationId(chatHistories[index]?.id);
     setIsHistoryOpen(false);
   };
 
-  const handleClearHistory = () => {
-    // Hiển thị hộp thoại xác nhận
-    if (activeHistoryIndex !== null && chatHistories.length > 0) {
-      const confirmDelete = window.confirm(
-        `Do you want to delete this history: "${chatHistories[activeHistoryIndex].title}"?`
-      );
-      if (confirmDelete) {
+  const handleClearHistory = async () => {
+    if (activeHistoryIndex === null || !chatHistories[activeHistoryIndex]) {
+      toast.warn("No history selected to delete!");
+      return;
+    }
+
+    const history = chatHistories[activeHistoryIndex];
+    const confirmDelete = window.confirm(
+      `Do you want to delete this history: "${history.title}"?`
+    );
+
+    if (confirmDelete) {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error("Please log in to delete history.");
+          navigate("/login");
+          return;
+        }
+
+        for (const backendId of history.backendIds) {
+          await axiosInstance.delete(
+            `/api/tools/history/chatbot/${backendId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+        }
+
         const updatedHistories = chatHistories.filter(
           (_, index) => index !== activeHistoryIndex
         );
         setChatHistories(updatedHistories);
-        localStorage.setItem("chatHistories", JSON.stringify(updatedHistories));
 
-        // Cập nhật activeHistoryIndex nếu cần
         if (updatedHistories.length === 0) {
           setActiveHistoryIndex(null);
           setMessages([]);
-        } else if (activeHistoryIndex >= updatedHistories.length) {
-          setActiveHistoryIndex(updatedHistories.length - 1);
-          setMessages(updatedHistories[updatedHistories.length - 1].messages);
+          setCurrentConversationId(null);
         } else {
-          setMessages(updatedHistories[activeHistoryIndex].messages);
+          const newIndex = 0;
+          setActiveHistoryIndex(newIndex);
+          setMessages(updatedHistories[newIndex]?.messages || []);
+          setCurrentConversationId(updatedHistories[newIndex]?.id);
         }
+
+        toast.info("Chat history deleted successfully!");
+      } catch (err) {
+        console.error("Error deleting chat history:", err);
+        let errorMessage = "Failed to delete chat history.";
+        if (err.response) {
+          if (err.response.status === 401) {
+            errorMessage = "Session expired. Please log in again.";
+            localStorage.removeItem("token");
+            navigate("/login");
+          } else if (err.response.status === 403) {
+            errorMessage = "You are not authorized to delete this history.";
+          } else if (err.response.status === 404) {
+            errorMessage = "History not found.";
+          } else if (err.response.status === 400) {
+            errorMessage =
+              err.response.data?.error || "Invalid request to delete history.";
+          } else if (err.response.data?.error) {
+            errorMessage = err.response.data.error;
+          }
+        }
+        toast.error(errorMessage);
       }
-    } else {
-      alert("No history selected to delete!");
     }
   };
 
   const startNewChat = () => {
     setMessages([]);
     setActiveHistoryIndex(null);
+    setInput("");
+    setCurrentConversationId(null);
   };
 
-  // Hàm nhóm lịch sử chat theo ngày
   const groupHistoriesByDate = () => {
     const grouped = {};
-
     chatHistories.forEach((history, index) => {
       const date = new Date(history.timestamp).toLocaleDateString("en-US", {
         weekday: "long",
@@ -158,31 +317,35 @@ function TextAssistance() {
         month: "long",
         day: "numeric",
       });
-
-      if (!grouped[date]) {
-        grouped[date] = [];
-      }
+      if (!grouped[date]) grouped[date] = [];
       grouped[date].push({ ...history, originalIndex: index });
     });
-
     return grouped;
   };
+
+  // Group messages into pairs (user and model) and reverse the pairs for display
+  const groupedMessages = [];
+  for (let i = 0; i < messages.length; i += 2) {
+    const userMessage = messages[i];
+    const modelMessage = messages[i + 1] || null;
+    if (userMessage) {
+      groupedMessages.push({ user: userMessage, model: modelMessage });
+    }
+  }
+  const reversedGroupedMessages = [...groupedMessages].reverse();
 
   const groupedHistories = groupHistoriesByDate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-700 to-black text-white flex flex-col">
       <Navbar />
-
-      <div className="flex flex-1 pt-16 ">
-        {/* Fixed Chat History Sidebar */}
+      <div className="flex flex-1 pt-16">
         <div
           className={`fixed top-16 left-0 w-[18rem] md:w-72 lg:w-80 h-[calc(100vh-4rem)] 
-  bg-gradient-to-r from-black via-gray-800 to-transparent z-20 transform 
-  ${isHistoryOpen ? "translate-x-0" : "-translate-x-full"} 
-  transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-lg border-r border-gray-700`}
+            bg-gradient-to-r from-black via-gray-800 to-transparent z-20 transform 
+            ${isHistoryOpen ? "translate-x-0" : "-translate-x-full"} 
+            transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-lg border-r border-gray-700`}
         >
-          {/* Header Sidebar */}
           <div className="p-4 flex justify-between items-center border-b border-gray-700">
             <h2 className="text-lg font-semibold text-white">Chat History</h2>
             <button
@@ -192,8 +355,6 @@ function TextAssistance() {
               ✕
             </button>
           </div>
-
-          {/* Nội dung lịch sử chat */}
           <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-5rem)]">
             {chatHistories.length === 0 ? (
               <p className="text-gray-400 text-center">No history yet</p>
@@ -212,8 +373,8 @@ function TextAssistance() {
                         }
                         className={`w-full text-left p-3 rounded-lg transition-colors ${
                           activeHistoryIndex === history.originalIndex
-                            ? "bg-gray-700 text-white-200 hover:bg-gray-600"
-                            : "bg-blue-600 text-white"
+                            ? "bg-gray-700 text-white"
+                            : "bg-blue-600 text-white hover:bg-blue-700"
                         }`}
                       >
                         {history.title}
@@ -224,20 +385,18 @@ function TextAssistance() {
               ))
             )}
           </div>
-
-          {/* Nút xóa lịch sử */}
           <div className="absolute bottom-0 w-full p-4 border-t border-gray-700 bg-gray-900/60 backdrop-blur-lg">
             <button
               onClick={handleClearHistory}
-              className="w-full p-3 bg-red-600 rounded-lg hover:bg-red-700 transition text-white font-medium bg-gradient-to-r from-red-700 to-orange-700 hover:from-red-600 hover:to-orange-600 shadow-md hover:shadow-lg"
+              className="w-full p-3 bg-red-600 rounded-lg hover:bg-red-700 transition text-white font-medium disabled:bg-gray-500"
+              disabled={activeHistoryIndex === null}
             >
-              Clear History
+              Delete Selected History
             </button>
           </div>
         </div>
 
-        {/* Chat Content */}
-        <div className="flex-1 flex flex-col ml-0 lg:ml-64">
+        <div className="flex-1 flex flex-col ml-0 lg:ml-80">
           <div className="flex-1 p-6 overflow-y-auto">
             <div className="max-w-3xl mx-auto">
               <h1
@@ -251,29 +410,33 @@ function TextAssistance() {
                   Start a conversation by typing below...
                 </div>
               )}
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
-                  } mb-4`}
-                >
-                  <div
-                    className={`max-w-[70%] p-4 overflow-x-auto rounded-lg shadow-md select-text break-words ${
-                      msg.role === "user"
-                        ? "bg-gray-800 text-white"
-                        : "bg-gray-700 text-white"
-                    }`}
-                  >
-                    <ReactMarkdown>
-                      {msg.text || "Error: No text available"}
-                    </ReactMarkdown>
-                  </div>
+              {reversedGroupedMessages.map((pair, pairIndex) => (
+                <div key={pairIndex} className="mb-4">
+                  {/* User message (question) */}
+                  {pair.user && (
+                    <div className="flex justify-end mb-2">
+                      <div className="max-w-[70%] p-4 rounded-lg shadow-md select-text break-words bg-gray-800 text-white">
+                        <ReactMarkdown>
+                          {pair.user.text || "Error: No text available"}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  )}
+                  {/* Model message (answer) */}
+                  {pair.model && (
+                    <div className="flex justify-start">
+                      <div className="max-w-[70%] p-4 rounded-lg shadow-md select-text break-words bg-gray-700 text-white">
+                        <ReactMarkdown>
+                          {pair.model.text || "Error: No text available"}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
               {loading && (
-                <div className="flex justify-start mb-4 ">
-                  <div className="bg-gray-700 p-4 overflow-x-auto rounded-lg shadow-md max-w-[70%] ">
+                <div className="flex justify-start mb-4">
+                  <div className="bg-gray-700 p-4 rounded-lg shadow-md max-w-[70%]">
                     <span className="text-gray-400 animate-pulse">
                       Thinking...
                     </span>
@@ -284,7 +447,6 @@ function TextAssistance() {
             </div>
           </div>
 
-          {/* Input Area */}
           <div className="sticky bottom-0 p-6 bg-transparent">
             <div className="max-w-3xl mx-auto flex items-center bg-gray-800 rounded-full shadow-lg p-2">
               <button
@@ -316,7 +478,6 @@ function TextAssistance() {
             )}
           </div>
 
-          {/* New Chat Button */}
           <button
             onClick={startNewChat}
             className="fixed bottom-20 right-6 p-3 bg-gradient-to-r from-lime-400 to-emerald-500 hover:from-lime-500 hover:to-emerald-600 shadow-md hover:shadow-lg rounded-full text-white"

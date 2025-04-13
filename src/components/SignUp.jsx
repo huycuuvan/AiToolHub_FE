@@ -38,7 +38,7 @@ export const SignUp = () => {
     },
   });
 
-  // Background slideshow effect (using framer-motion)
+  // Background slideshow effect
   useEffect(() => {
     const images = [
       "bg-hero-pattern",
@@ -84,7 +84,7 @@ export const SignUp = () => {
     }
   };
 
-  // Define icons (consistent with Login component)
+  // Define icons
   const Icons = {
     spinner: (props) => (
       <div
@@ -145,11 +145,11 @@ export const SignUp = () => {
                     htmlFor="username"
                     className="block text-sm font-medium text-white"
                   >
-                    Username
+                    Username (Optional)
                   </label>
                   <input
                     id="username"
-                    placeholder="Enter your username"
+                    placeholder="Enter your username (optional)"
                     className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                     {...register("username")}
                   />

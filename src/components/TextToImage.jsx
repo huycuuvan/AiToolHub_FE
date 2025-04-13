@@ -1,37 +1,34 @@
 import gsap from "gsap";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Navbar } from "./Navbar";
 import axiosInstance from "../api";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Loader from "./Loader";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 export const TextToImage = () => {
+  const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [imageSrc, setImageSrc] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState("Default");
-  const [apiEndpoint, setApiEndpoint] = useState(
-    "http://localhost:8080/api/tools/model1"
-  );
+  const [apiEndpoint, setApiEndpoint] = useState("/api/tools/model1");
   const [history, setHistory] = useState([]);
   const [modalImage, setModalImage] = useState(null);
   const [generationTime, setGenerationTime] = useState(null);
   const [numInferenceSteps, setNumInferenceSteps] = useState(28);
-  const [isGuideVisible, setIsGuideVisible] = useState(false); // State to control guide visibility
+  const [isGuideVisible, setIsGuideVisible] = useState(false);
 
-  const guideRef = useRef(null); // Ref for the guide section
+  const guideRef = useRef(null);
+  const formRef = useRef(null);
+  const imageRef = useRef(null);
+  const historyRef = useRef(null);
 
   const models = [
-    {
-      name: "Stable Diffusion 1.0",
-      api: "http://localhost:8080/api/tools/model1",
-    },
-    {
-      name: "Stable Diffusion 3.5",
-      api: "http://localhost:8080/api/tools/model2",
-    },
+    { name: "Stable Diffusion 1.0", api: "/api/tools/model1" },
+    { name: "Stable Diffusion 3.5", api: "/api/tools/model2" },
   ];
 
   const styles = [
@@ -86,41 +83,58 @@ export const TextToImage = () => {
     Minimalist: "high detail, complex background, realistic textures",
   };
 
-  // Refs for animations
-  const formRef = useRef(null);
-  const imageRef = useRef(null);
-  const historyRef = useRef(null);
-
-  // Handle scroll to show/hide the guide
+  // Load history from backend
   useEffect(() => {
-    const handleScroll = () => {
-      if (guideRef.current) {
-        const guidePosition = guideRef.current.getBoundingClientRect().top;
-        const windowHeight = window.innerHeight;
-        if (guidePosition < windowHeight * 0.8) {
-          setIsGuideVisible(true);
-        } else {
-          setIsGuideVisible(false);
+    const fetchHistory = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please log in to view history.");
+        navigate("/login");
+        return;
+      }
+
+      try {
+        const response = await axiosInstance.get("/api/tools/history/images", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const historyData = response.data.map((entry) => ({
+          id: entry.id,
+          image: `https://storage.googleapis.com/aitoolhub/${entry.gcsPath.replace(
+            "gs://aitoolhub/",
+            ""
+          )}`,
+          prompt: entry.prompt,
+          style: entry.modelUsed,
+          negativePrompt: "",
+          numInferenceSteps: entry.numInferenceSteps || 28,
+          timestamp: entry.createdAt,
+          generationTime: null,
+        }));
+        // Sort by timestamp descending to show newest first
+        setHistory(
+          historyData.sort(
+            (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+          )
+        );
+      } catch (err) {
+        console.error("Error fetching history:", err);
+        let errorMessage = "Failed to load history.";
+        if (err.response) {
+          if (err.response.status === 401) {
+            errorMessage = "Session expired. Please log in again.";
+            localStorage.removeItem("token");
+            navigate("/login");
+          } else if (err.response.status === 400) {
+            errorMessage = err.response.data?.message || "Invalid request.";
+          } else if (err.response.data?.error) {
+            errorMessage = err.response.data.error;
+          }
         }
+        toast.error(errorMessage);
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    try {
-      const savedHistory = JSON.parse(
-        localStorage.getItem("imageHistory") || "[]"
-      );
-      if (Array.isArray(savedHistory)) {
-        setHistory(savedHistory);
-      }
-    } catch (e) {
-      console.error("Error parsing localStorage imageHistory:", e);
-      setHistory([]);
-    }
+    fetchHistory();
 
     // GSAP animations
     if (formRef.current && historyRef.current) {
@@ -135,32 +149,83 @@ export const TextToImage = () => {
         { opacity: 1, x: 0, duration: 1, ease: "power2.out" }
       );
     }
+  }, [navigate]);
+
+  // Handle scroll to show/hide guide
+  useEffect(() => {
+    const handleScroll = () => {
+      if (guideRef.current) {
+        const guidePosition = guideRef.current.getBoundingClientRect().top;
+        const windowHeight = window.innerHeight;
+        setIsGuideVisible(guidePosition < windowHeight * 0.8);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleModelClick = (model) => {
+  const handleModelClick = useCallback((model) => {
     setApiEndpoint(model.api);
     toast.info(`Switched to ${model.name}`);
-  };
+  }, []);
 
-  const handleStyleClick = (style) => {
+  const handleStyleClick = useCallback((style) => {
     setSelectedStyle(style.name);
-  };
+  }, []);
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
-      "Are you sure you want to delete this image? Yes or No"
+      "Are you sure you want to delete this image?"
     );
     if (confirmDelete) {
-      const updatedHistory = history.filter((entry) => entry.id !== id);
-      setHistory(updatedHistory);
-      localStorage.setItem("imageHistory", JSON.stringify(updatedHistory));
-      toast.info("Image deleted successfully!");
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error("Please log in to delete images.");
+          navigate("/login");
+          return;
+        }
+
+        await axiosInstance.delete(`/api/tools/history/images/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setHistory((prevHistory) =>
+          prevHistory.filter((entry) => entry.id !== id)
+        );
+        toast.info("Image deleted successfully!");
+      } catch (err) {
+        console.error("Error deleting image:", err);
+        let errorMessage = "Failed to delete image.";
+        if (err.response) {
+          if (err.response.status === 401) {
+            errorMessage = "Session expired. Please log in again.";
+            localStorage.removeItem("token");
+            navigate("/login");
+          } else if (err.response.status === 403) {
+            errorMessage = "You are not authorized to delete this image.";
+          } else if (err.response.status === 404) {
+            errorMessage = "Image not found.";
+          } else if (err.response.data?.error) {
+            errorMessage = err.response.data.error;
+          }
+        }
+        toast.error(errorMessage);
+      }
     }
   };
 
   const query = async () => {
     if (!input.trim()) {
       toast.warn("⚠️ Please enter a prompt!");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please log in to generate images.");
+      navigate("/login");
       return;
     }
 
@@ -172,29 +237,33 @@ export const TextToImage = () => {
     const combinedInput =
       selectedStyle === "Default"
         ? input
-        : `${input} in ${selectedStyle} style`;
+        : `${input} in ${selectedStyle.toLowerCase()} style`;
 
     try {
       const payload = {
         input: combinedInput,
         negativePrompt,
-        numInferenceSteps,
+        numInferenceSteps: Number(numInferenceSteps),
       };
 
       const response = await axiosInstance.post(apiEndpoint, payload, {
         responseType: "blob",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       const reader = new FileReader();
       reader.readAsDataURL(response.data);
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const endTime = Date.now();
         const duration = (endTime - startTime) / 1000;
         setGenerationTime(duration);
 
         const newImage = reader.result;
         const historyEntry = {
-          id: Date.now(),
+          id: Date.now(), // Temporary ID
           image: newImage,
           prompt: input,
           style: selectedStyle,
@@ -204,13 +273,44 @@ export const TextToImage = () => {
           generationTime: duration,
         };
 
-        const updatedHistory = [historyEntry, ...history];
-        setHistory(updatedHistory);
-        localStorage.setItem("imageHistory", JSON.stringify(updatedHistory));
-
+        // Add to history locally (temporary)
+        setHistory((prevHistory) => [historyEntry, ...prevHistory]);
         setImageSrc(newImage);
         toast.success("🎨 Image generated successfully!");
 
+        // Sync with backend history
+        try {
+          const historyResponse = await axiosInstance.get(
+            "/api/tools/history/images",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          const historyData = historyResponse.data.map((entry) => ({
+            id: entry.id,
+            image: `https://storage.googleapis.com/aitoolhub/${entry.gcsPath.replace(
+              "gs://aitoolhub/",
+              ""
+            )}`,
+            prompt: entry.prompt,
+            style: entry.modelUsed,
+            negativePrompt: "",
+            numInferenceSteps: entry.numInferenceSteps || 28,
+            timestamp: entry.createdAt,
+            generationTime: null,
+          }));
+          // Sort by timestamp descending
+          setHistory(
+            historyData.sort(
+              (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+            )
+          );
+        } catch (err) {
+          console.error("Error updating history:", err);
+          toast.error("Failed to sync history.");
+        }
+
+        // GSAP animation
         setTimeout(() => {
           if (imageRef.current) {
             gsap.fromTo(
@@ -223,7 +323,21 @@ export const TextToImage = () => {
       };
     } catch (err) {
       console.error("Error generating image:", err);
-      toast.error(err.response?.data?.error || "⚠️ Error generating image");
+      let errorMessage = "⚠️ Error generating image";
+      if (err.response) {
+        if (err.response.status === 400) {
+          errorMessage =
+            err.response.data?.message ||
+            "Invalid input. Please check your prompt and try again.";
+        } else if (err.response.status === 401) {
+          errorMessage = "Session expired. Please log in again.";
+          localStorage.removeItem("token");
+          navigate("/login");
+        } else if (err.response.data?.error) {
+          errorMessage = err.response.data.error;
+        }
+      }
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -313,9 +427,15 @@ export const TextToImage = () => {
                 value={numInferenceSteps}
                 onChange={(e) => setNumInferenceSteps(Number(e.target.value))}
                 className="w-full h-6 bg-transparent appearance-none pointer-events-auto z-10 relative"
-                style={{ WebkitAppearance: "none" }}
               />
-              <style jsx>{`
+              <style>{`
+                input[type="range"] {
+                  -webkit-appearance: none;
+                  width: 100%;
+                  height: 6px;
+                  background: transparent;
+                  outline: none;
+                }
                 input[type="range"]::-webkit-slider-thumb {
                   -webkit-appearance: none;
                   height: 20px;
@@ -324,9 +444,6 @@ export const TextToImage = () => {
                   border: 3px solid #2563eb;
                   border-radius: 50%;
                   cursor: pointer;
-                  margin-top: -8px;
-                  position: relative;
-                  z-index: 10;
                 }
                 input[type="range"]::-moz-range-thumb {
                   height: 20px;
@@ -335,8 +452,6 @@ export const TextToImage = () => {
                   border: 3px solid #2563eb;
                   border-radius: 50%;
                   cursor: pointer;
-                  position: relative;
-                  z-index: 10;
                 }
                 input[type="range"]::-webkit-slider-runnable-track {
                   height: 6px;
@@ -417,6 +532,7 @@ export const TextToImage = () => {
                       src={entry.image}
                       alt={`Generated ${entry.id}`}
                       className="w-full h-[150px] lg:h-[180px] object-cover rounded-lg cursor-pointer transition duration-300 hover:opacity-90"
+                      onClick={() => setModalImage(entry.image)}
                     />
                     <div className="absolute inset-0 flex justify-center items-center opacity-0 group-hover:opacity-100 transition duration-300 bg-black/50 rounded-lg">
                       <button
@@ -478,7 +594,6 @@ export const TextToImage = () => {
         <h2 className="text-3xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">
           AI Image Generator Guide
         </h2>
-
         <p className="mb-4">
           Bring your imagination to life with our Free Online AI Image
           Generator. Simply type your ideas, and watch as they transform into
@@ -486,7 +601,6 @@ export const TextToImage = () => {
           designer, or entrepreneur, our AI-powered tool helps you generate
           unique visuals tailored to your needs.
         </p>
-
         <h3 className="text-xl font-semibold mb-2">
           Turn Words into Art with AI
         </h3>
@@ -496,7 +610,6 @@ export const TextToImage = () => {
           concepts to detailed scenes, the possibilities are endless. Describe
           what you envision, and let our AI bring it to life.
         </p>
-
         <h3 className="text-xl font-semibold mb-2">
           Features of Our AI Image Generator
         </h3>
@@ -518,7 +631,6 @@ export const TextToImage = () => {
             your text prompt and select your preferences.
           </li>
         </ul>
-
         <h3 className="text-xl font-semibold mb-2">
           How to Use the AI Image Generator
         </h3>
@@ -546,7 +658,6 @@ export const TextToImage = () => {
             social media.
           </li>
         </ol>
-
         <h3 className="text-xl font-semibold mb-2">
           Why Use Our AI Image Generator?
         </h3>
@@ -564,7 +675,6 @@ export const TextToImage = () => {
             ads, presentations, and promotional materials effortlessly.
           </li>
         </ul>
-
         <h3 className="text-xl font-semibold mb-2">
           Tips for Creating Amazing AI-Generated Images
         </h3>
@@ -586,7 +696,6 @@ export const TextToImage = () => {
             and aspect ratios for a unique touch.
           </li>
         </ul>
-
         <p className="text-center font-semibold">
           Unleash your creativity and start generating stunning images today!
         </p>
@@ -604,7 +713,7 @@ export const TextToImage = () => {
           >
             <button
               onClick={() => setModalImage(null)}
-              className="absolute top-2 right-2 text-white hover:text-gray-300"
+              className="absolute top-2 right-2 text-rose-500 hover:text-rose-700 text-3xl font-bold"
             >
               ✕
             </button>

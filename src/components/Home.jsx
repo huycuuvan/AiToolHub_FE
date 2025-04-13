@@ -5,6 +5,7 @@ import Introdution from "./Introdution";
 import { Navbar } from "./Navbar";
 import gsap from "gsap";
 import { motion } from "framer-motion";
+import Footer from "./Footer";
 
 // FloatingPaths Component
 function FloatingPaths({ position }) {
@@ -134,6 +135,9 @@ export const Home = () => {
       {/* Introduction Section */}
       <div className="relative z-30 py-20 text-white">
         <Introdution />
+      </div>
+      <div className="relative z-30 text-white">
+        <Footer />
       </div>
     </div>
   );
