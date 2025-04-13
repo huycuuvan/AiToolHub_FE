@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { useNavigate } from "react-router";
+import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,7 +38,7 @@ export const SignUp = () => {
     },
   });
 
-  // Background slideshow effect
+  // Background slideshow effect (using framer-motion)
   useEffect(() => {
     const images = [
       "bg-hero-pattern",
@@ -62,29 +62,40 @@ export const SignUp = () => {
   // Handle form submission
   const onSubmit = async (data) => {
     setIsLoading(true);
-
+  
     try {
       const response = await fetch("http://localhost:8080/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
+  
       if (!response.ok) {
-        const responseData = await response.json();
-        throw new Error(responseData.message || "Sign-up failed");
+        const responseData = await response.json(); // Sử dụng response.json() nếu backend trả về JSON
+        let errorMessage = responseData.error || responseData.message || "Sign-up failed";
+  
+        // Handle specific error messages from backend
+        if (errorMessage.includes("Email already in use")) {
+          toast.error("Registration failed: Email already in use!");
+        } else if (errorMessage.includes("Username already in use")) {
+          toast.error("Registration failed: Username already in use!");
+        } else {
+          toast.error(errorMessage);
+        }
+        throw new Error(errorMessage);
       }
-
-      toast.success("Sign-up successful! Redirecting to login...");
+  
+      const responseData = await response.text(); // Get full response including success message
+      toast.success("Registration successful! Redirecting to login...");
       setTimeout(() => navigate("/login"), 3000);
     } catch (error) {
-      toast.error(error.message || "Something went wrong. Please try again.");
+      console.error("Error during sign-up:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Define icons
+  // Define icons (consistent with Login component)
   const Icons = {
     spinner: (props) => (
       <div
@@ -145,11 +156,11 @@ export const SignUp = () => {
                     htmlFor="username"
                     className="block text-sm font-medium text-white"
                   >
-                    Username (Optional)
+                    Username
                   </label>
                   <input
                     id="username"
-                    placeholder="Enter your username (optional)"
+                    placeholder="Enter your username"
                     className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                     {...register("username")}
                   />
