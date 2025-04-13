@@ -2,11 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Navbar } from "../Navbar";
 import gsap from "gsap";
 import { toast } from "react-toastify";
-import {
-  saveToHistory,
-  getHistory,
-  deleteFromHistory,
-} from "../../utils/localStorage";
+import axiosInstance from "../../api";
+import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 
 // Define voice options
@@ -36,11 +33,12 @@ const VOICES = {
 };
 
 const TextToSpeech = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("settings");
   const [history, setHistory] = useState([]);
   const [input, setInput] = useState("");
   const [voice, setVoice] = useState(VOICES.CALLUM.name);
-  const [model, setModel] = useState("Eleven Turbo v2.5");
+  const [model] = useState("Eleven Turbo v2.5");
   const [speed, setSpeed] = useState(1);
   const [stability, setStability] = useState(0.5);
   const [similarity, setSimilarity] = useState(0.75);
@@ -53,14 +51,41 @@ const TextToSpeech = () => {
   const [currentAudioTimestamp, setCurrentAudioTimestamp] = useState(null);
 
   const audioRef = useRef(null);
-  const historyAudioRefs = useRef({}); // Refs for history audio elements
+  const historyAudioRefs = useRef({});
   const containerRef = useRef(null);
   const titleRef = useRef(null);
 
   // Load history on mount
   useEffect(() => {
-    const savedHistory = getHistory();
-    setHistory(savedHistory);
+    const fetchHistory = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please log in to view history.");
+        navigate("/login");
+        return;
+      }
+
+      try {
+        const response = await axiosInstance.get("/api/tools/history/tts", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setHistory(response.data);
+      } catch (err) {
+        let errorMessage = "Failed to load history.";
+        if (err.response) {
+          if (err.response.status === 401) {
+            errorMessage = "Session expired. Please log in again.";
+            localStorage.removeItem("token");
+            navigate("/login");
+          } else if (err.response.data?.error) {
+            errorMessage = err.response.data.error;
+          }
+        }
+        toast.error(errorMessage);
+      }
+    };
+
+    fetchHistory();
 
     // GSAP animations
     gsap.fromTo(
@@ -73,22 +98,35 @@ const TextToSpeech = () => {
       { opacity: 0, y: 50 },
       { opacity: 1, y: 0, duration: 1, delay: 0.5, ease: "power3.out" }
     );
-  }, []);
+  }, [navigate]);
 
-  // Timer to force re-render every 10 seconds for timestamp updates
+  // Update audio time and duration
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTick((prev) => prev + 1); // Increment tick to force re-render
-    }, 10000); // Update every 10 seconds
-
-    return () => clearInterval(interval); // Cleanup on unmount
-  }, []);
+    const audio = audioRef.current;
+    if (audio) {
+      const updateTime = () => setCurrentTime(audio.currentTime);
+      const setAudioDuration = () => setDuration(audio.duration);
+      audio.addEventListener("timeupdate", updateTime);
+      audio.addEventListener("loadedmetadata", setAudioDuration);
+      return () => {
+        audio.removeEventListener("timeupdate", updateTime);
+        audio.removeEventListener("loadedmetadata", setAudioDuration);
+      };
+    }
+  }, [generatedAudioUrl]);
 
   // Handle form submission for main generation
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) {
       toast.warning("Please enter some text");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please log in to generate speech.");
+      navigate("/login");
       return;
     }
 
@@ -100,44 +138,56 @@ const TextToSpeech = () => {
     setCurrentAudioTimestamp(null);
 
     try {
-      const selectedVoice = Object.values(VOICES).find((v) => v.name === voice);
-      const response = await fetch(
-        "http://localhost:8080/api/tools/text-to-speech",
+      const response = await axiosInstance.post(
+        "/api/tools/text-to-speech",
         {
-          method: "POST",
+          input,
+          voice,
+          speed,
+          stability,
+          similarity,
+        },
+        {
           headers: {
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            input,
-            voice: selectedVoice.name,
-            speed,
-            stability,
-            similarity,
-          }),
+          responseType: "blob",
         }
       );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Server error:", errorData);
-        throw new Error(errorData.message || "Failed to generate speech");
-      }
-
-      const blob = await response.blob();
+      const blob = response.data;
       const audioUrl = URL.createObjectURL(blob);
       setGeneratedAudioUrl(audioUrl);
+      setCurrentAudioTimestamp(new Date().toISOString());
 
-      // Save to history with all parameters, including the blob
-      await saveToHistory(input, voice, speed, stability, similarity, blob);
-      setHistory(getHistory());
+      // Refresh history
+      const historyResponse = await axiosInstance.get(
+        "/api/tools/history/tts",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setHistory(historyResponse.data);
+
       toast.success("Speech generated successfully!");
     } catch (error) {
-      toast.error(error.message);
+      let errorMessage = "Failed to generate speech.";
+      if (error.response) {
+        if (error.response.status === 401) {
+          errorMessage = "Session expired. Please log in again.";
+          localStorage.removeItem("token");
+          navigate("/login");
+        } else if (error.response.data?.error) {
+          errorMessage = error.response.data.error;
+        }
+      }
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
   // Handle playback for history entries
   const handleHistoryPlayback = (item, index) => {
     const audio = historyAudioRefs.current[index];
@@ -151,10 +201,37 @@ const TextToSpeech = () => {
   };
 
   // Handle deletion of a history entry
-  const handleDeleteHistory = (index) => {
-    const updatedHistory = deleteFromHistory(index);
-    setHistory(updatedHistory);
-    toast.success("History entry deleted!");
+  const handleDeleteHistory = async (id) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please log in to delete history.");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      await axiosInstance.delete(`/api/tools/history/tts/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setHistory(history.filter((item) => item.id !== id));
+      toast.success("History entry deleted!");
+    } catch (err) {
+      let errorMessage = "Failed to delete history.";
+      if (err.response) {
+        if (err.response.status === 401) {
+          errorMessage = "Session expired. Please log in again.";
+          localStorage.removeItem("token");
+          navigate("/login");
+        } else if (err.response.status === 403) {
+          errorMessage = "You are not authorized to delete this history.";
+        } else if (err.response.status === 404) {
+          errorMessage = "History not found.";
+        } else if (err.response.data?.error) {
+          errorMessage = err.response.data.error;
+        }
+      }
+      toast.error(errorMessage);
+    }
   };
 
   // Toggle play/pause for the main generated audio
@@ -188,13 +265,13 @@ const TextToSpeech = () => {
   // Filter and group history by date
   const filteredHistory = history.filter(
     (item) =>
-      item.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.input.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.voice.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const groupedHistory = filteredHistory.reduce(
     (acc, item) => {
-      const date = new Date(item.timestamp);
+      const date = new Date(item.createdAt);
       const today = new Date();
       const yesterday = new Date(today);
       yesterday.setDate(today.getDate() - 1);
@@ -217,16 +294,16 @@ const TextToSpeech = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-700 to-black ">
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-700 to-black">
       <Navbar />
-      <div className="pt-20 px-4 max-w-7xl mx-auto ">
-        <div className="flex justify-between items-center mb-4 ">
+      <div className="pt-20 px-4 max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-4">
           <h1 ref={titleRef} className="text-2xl font-semibold text-white-900">
             Text to Speech
           </h1>
         </div>
 
-        <div ref={containerRef} className="flex flex-col md:flex-row gap-6 ">
+        <div ref={containerRef} className="flex flex-col md:flex-row gap-6">
           {/* Left Section: Textarea and Generated Audio */}
           <div className="w-full md:w-2/3">
             <form onSubmit={handleSubmit}>
@@ -317,22 +394,6 @@ const TextToSpeech = () => {
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  <button className="text-gray-600 hover:text-gray-900">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M8.445 14.832A1 1 0 0010 14v-4a1 1 0 00-1.555-.832l-4 3a1 1 0 000 1.664l4 3zM15.555 9.168A1 1 0 0014 10v4a1 1 0 001.555.832l4-3a1 1 0 000-1.664l-4-3z"
-                      />
-                    </svg>
-                  </button>
                   <a
                     href={generatedAudioUrl}
                     download={`speech-${Date.now()}.mp3`}
@@ -353,22 +414,6 @@ const TextToSpeech = () => {
                       />
                     </svg>
                   </a>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-                      />
-                    </svg>
-                  </button>
                 </div>
               </div>
             )}
@@ -446,6 +491,7 @@ const TextToSpeech = () => {
                       value={model}
                       onChange={(e) => setModel(e.target.value)}
                       className="w-full p-2 rounded-lg border border-gray-300 text-gray-600 focus:border-blue-500 focus:outline-none appearance-none"
+                      disabled
                     >
                       <option value="Eleven Turbo v2.5">
                         Eleven Turbo v2.5
@@ -607,25 +653,25 @@ const TextToSpeech = () => {
                           </h3>
                           {groupedHistory.today.map((item, index) => (
                             <div
-                              key={index}
+                              key={item.id}
                               className="p-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 cursor-pointer"
                             >
                               <div className="flex justify-between items-center">
                                 <div
                                   onClick={() => {
-                                    setInput(item.text);
+                                    setInput(item.input);
                                     setVoice(item.voice);
                                     setSpeed(item.speed || 1);
                                     setStability(item.stability || 0.5);
                                     setSimilarity(item.similarity || 0.75);
-                                    setGeneratedAudioUrl(item.audioData);
-                                    setCurrentAudioTimestamp(item.timestamp);
+                                    setGeneratedAudioUrl(item.audioUrl);
+                                    setCurrentAudioTimestamp(item.createdAt);
                                     setActiveTab("settings");
                                   }}
                                   className="flex-1"
                                 >
                                   <p className="text-gray-900 line-clamp-1">
-                                    {item.text}
+                                    {item.input}
                                   </p>
                                   <div className="flex items-center space-x-2 text-sm text-gray-500">
                                     <span
@@ -647,7 +693,7 @@ const TextToSpeech = () => {
                                     <span>·</span>
                                     <span>
                                       {formatDistanceToNow(
-                                        new Date(item.timestamp)
+                                        new Date(item.createdAt)
                                       )}{" "}
                                       ago
                                     </span>
@@ -658,7 +704,7 @@ const TextToSpeech = () => {
                                     onClick={() =>
                                       handleHistoryPlayback(
                                         item,
-                                        `today-${index}`
+                                        `today-${item.id}`
                                       )
                                     }
                                     className="text-gray-600 hover:text-gray-900"
@@ -672,32 +718,16 @@ const TextToSpeech = () => {
                                       <path d="M8 5v14l11-7z" />
                                     </svg>
                                   </button>
-                                  <button className="text-gray-600 hover:text-gray-900">
-                                    <svg
-                                      className="w-5 h-5"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                      xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M8.445 14.832A1 1 0 0010 14v-4a1 1 0 00-1.555-.832l-4 3a1 1 0 000 1.664l4 3zM15.555 9.168A1 1 0 0014 10v4a1 1 0 001.555.832l4-3a1 1 0 000-1.664l-4-3z"
-                                      />
-                                    </svg>
-                                  </button>
                                   <a
-                                    href={item.audioData}
+                                    href={item.audioUrl}
                                     download={`speech-${Date.now()}.mp3`}
                                     className={`text-gray-600 hover:text-gray-900 ${
-                                      !item.audioData
+                                      !item.audioUrl
                                         ? "opacity-50 cursor-not-allowed"
                                         : ""
                                     }`}
                                     onClick={(e) =>
-                                      !item.audioData && e.preventDefault()
+                                      !item.audioUrl && e.preventDefault()
                                     }
                                   >
                                     <svg
@@ -716,7 +746,7 @@ const TextToSpeech = () => {
                                     </svg>
                                   </a>
                                   <button
-                                    onClick={() => handleDeleteHistory(index)}
+                                    onClick={() => handleDeleteHistory(item.id)}
                                     className="text-red-600 hover:text-red-800"
                                   >
                                     <svg
@@ -736,14 +766,14 @@ const TextToSpeech = () => {
                                   </button>
                                 </div>
                               </div>
-                              {item.audioData && (
+                              {item.audioUrl && (
                                 <audio
                                   ref={(el) =>
                                     (historyAudioRefs.current[
-                                      `today-${index}`
+                                      `today-${item.id}`
                                     ] = el)
                                   }
-                                  src={item.audioData}
+                                  src={item.audioUrl}
                                   className="hidden"
                                 />
                               )}
@@ -758,25 +788,25 @@ const TextToSpeech = () => {
                           </h3>
                           {groupedHistory.yesterday.map((item, index) => (
                             <div
-                              key={index}
+                              key={item.id}
                               className="p-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 cursor-pointer"
                             >
                               <div className="flex justify-between items-center">
                                 <div
                                   onClick={() => {
-                                    setInput(item.text);
+                                    setInput(item.input);
                                     setVoice(item.voice);
                                     setSpeed(item.speed || 1);
                                     setStability(item.stability || 0.5);
                                     setSimilarity(item.similarity || 0.75);
-                                    setGeneratedAudioUrl(item.audioData);
-                                    setCurrentAudioTimestamp(item.timestamp);
+                                    setGeneratedAudioUrl(item.audioUrl);
+                                    setCurrentAudioTimestamp(item.createdAt);
                                     setActiveTab("settings");
                                   }}
                                   className="flex-1"
                                 >
                                   <p className="text-gray-900 line-clamp-1">
-                                    {item.text}
+                                    {item.input}
                                   </p>
                                   <div className="flex items-center space-x-2 text-sm text-gray-500">
                                     <span
@@ -798,7 +828,7 @@ const TextToSpeech = () => {
                                     <span>·</span>
                                     <span>
                                       {formatDistanceToNow(
-                                        new Date(item.timestamp)
+                                        new Date(item.createdAt)
                                       )}{" "}
                                       ago
                                     </span>
@@ -809,7 +839,7 @@ const TextToSpeech = () => {
                                     onClick={() =>
                                       handleHistoryPlayback(
                                         item,
-                                        `yesterday-${index}`
+                                        `yesterday-${item.id}`
                                       )
                                     }
                                     className="text-gray-600 hover:text-gray-900"
@@ -823,32 +853,16 @@ const TextToSpeech = () => {
                                       <path d="M8 5v14l11-7z" />
                                     </svg>
                                   </button>
-                                  <button className="text-gray-600 hover:text-gray-900">
-                                    <svg
-                                      className="w-5 h-5"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                      xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M8.445 14.832A1 1 0 0010 14v-4a1 1 0 00-1.555-.832l-4 3a1 1 0 000 1.664l4 3zM15.555 9.168A1 1 0 0014 10v4a1 1 0 001.555.832l4-3a1 1 0 000-1.664l-4-3z"
-                                      />
-                                    </svg>
-                                  </button>
                                   <a
-                                    href={item.audioData}
+                                    href={item.audioUrl}
                                     download={`speech-${Date.now()}.mp3`}
                                     className={`text-gray-600 hover:text-gray-900 ${
-                                      !item.audioData
+                                      !item.audioUrl
                                         ? "opacity-50 cursor-not-allowed"
                                         : ""
                                     }`}
                                     onClick={(e) =>
-                                      !item.audioData && e.preventDefault()
+                                      !item.audioUrl && e.preventDefault()
                                     }
                                   >
                                     <svg
@@ -867,7 +881,7 @@ const TextToSpeech = () => {
                                     </svg>
                                   </a>
                                   <button
-                                    onClick={() => handleDeleteHistory(index)}
+                                    onClick={() => handleDeleteHistory(item.id)}
                                     className="text-red-600 hover:text-red-800"
                                   >
                                     <svg
@@ -887,14 +901,14 @@ const TextToSpeech = () => {
                                   </button>
                                 </div>
                               </div>
-                              {item.audioData && (
+                              {item.audioUrl && (
                                 <audio
                                   ref={(el) =>
                                     (historyAudioRefs.current[
-                                      `yesterday-${index}`
+                                      `yesterday-${item.id}`
                                     ] = el)
                                   }
-                                  src={item.audioData}
+                                  src={item.audioUrl}
                                   className="hidden"
                                 />
                               )}
@@ -913,7 +927,6 @@ const TextToSpeech = () => {
 
       {/* Custom Styles */}
       <style>{`
-        /* Custom range input styling */
         input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;

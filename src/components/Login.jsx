@@ -38,7 +38,10 @@ const Icons = {
 
 // Form validation schema using zod
 const formSchema = z.object({
-  username: z.string().min(1, { message: "Username is required" }),
+  email: z
+    .string()
+    .email({ message: "Invalid email address" })
+    .min(1, { message: "Email is required" }),
   password: z.string().min(1, { message: "Password is required" }),
   rememberMe: z.boolean().optional(),
 });
@@ -60,7 +63,7 @@ export const Login = () => {
   } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
       rememberMe: false,
     },
@@ -97,10 +100,13 @@ export const Login = () => {
         body: JSON.stringify({ token: credentialResponse.credential }),
       });
 
-      if (!response.ok) throw new Error("Google authentication failed");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Google authentication failed");
+      }
 
       const responseData = await response.json();
-      login({ username: responseData.username });
+      login({ email: responseData.email, token: responseData.token }); // Lưu JWT từ backend
       navigate("/");
       toast.success("Successfully logged in with Google!");
     } catch (error) {
@@ -121,7 +127,7 @@ export const Login = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: data.username,
+          email: data.email,
           password: data.password,
         }),
       });
@@ -258,20 +264,21 @@ export const Login = () => {
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
                   <label
-                    htmlFor="username"
+                    htmlFor="email"
                     className="block text-sm font-medium text-white"
                   >
-                    Username
+                    Email
                   </label>
                   <input
-                    id="username"
-                    placeholder="Enter your username"
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
                     className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    {...register("username")}
+                    {...register("email")}
                   />
-                  {errors.username && (
+                  {errors.email && (
                     <p className="text-sm text-red-500">
-                      {errors.username.message}
+                      {errors.email.message}
                     </p>
                   )}
                 </div>
@@ -353,7 +360,6 @@ export const Login = () => {
                 </div>
 
                 <div className="mt-4">
-                  {/* Google Login Component */}
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
                     disabled={isGoogleLoading}
@@ -361,9 +367,7 @@ export const Login = () => {
                       <span
                         onClick={renderProps.onClick}
                         disabled={renderProps.disabled}
-                      >
-                        {/* The button inside GoogleLogin will be rendered separately now */}
-                      </span>
+                      />
                     )}
                   />
                 </div>
@@ -384,6 +388,7 @@ export const Login = () => {
           </div>
         </motion.div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

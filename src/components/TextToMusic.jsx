@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Navbar } from "./Navbar";
 import { motion, AnimatePresence } from "framer-motion";
+import axiosInstance from "../api";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 
 // Random music prompts for the bubbles
 const musicPrompts = [
@@ -25,6 +29,7 @@ const getRandomBubbleProps = () => ({
 });
 
 const TextToMusic = () => {
+  const navigate = useNavigate();
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,28 +50,43 @@ const TextToMusic = () => {
     setError("");
     setLoading(true);
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please log in to generate music.");
+      navigate("/login");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch(
-        "https://api-inference.huggingface.co/models/facebook/musicgen-small",
+      const response = await axiosInstance.post(
+        "/api/tools/text-to-music",
+        text,
         {
           headers: {
-            Authorization: "Bearer",
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          method: "POST",
-          body: JSON.stringify({ inputs: text }),
+          responseType: "blob", // Expect binary audio data
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Error while generating audio. Please try again.");
-      }
-
-      const audioBlob = await response.blob();
+      const audioBlob = response.data;
       const audioUrl = URL.createObjectURL(audioBlob);
       setAudioUrl(audioUrl);
     } catch (err) {
-      setError(err.message);
+      let errorMessage = "Error generating music. Please try again.";
+      if (err.response) {
+        if (err.response.status === 401) {
+          errorMessage = "Session expired. Please log in again.";
+          localStorage.removeItem("token");
+          navigate("/login");
+        } else if (err.response.data) {
+          errorMessage = "Error generating music.";
+        }
+      }
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -83,7 +103,7 @@ const TextToMusic = () => {
   };
 
   return (
-    <div className="relative flex flex-col items-center min-h-screen text-white  bg-gradient-to-br from-black via-gray-700 to-black overflow-hidden">
+    <div className="relative flex flex-col items-center min-h-screen text-white bg-gradient-to-br from-black via-gray-700 to-black overflow-hidden">
       <Navbar />
 
       <div className="flex-1 w-full flex items-center justify-center relative z-10">

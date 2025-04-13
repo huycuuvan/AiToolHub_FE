@@ -1,15 +1,8 @@
-import { Html } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
-
 const Loader = () => {
   return (
-    <Canvas>
-      <Html>
-        <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-          <div className="w-[10vw] h-[10vw] rounded-full">Loading...</div>
-        </div>
-      </Html>
-    </Canvas>
+    <div className="flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-t-transparent border-blue-500 rounded-full animate-spin" />
+    </div>
   );
 };
 
