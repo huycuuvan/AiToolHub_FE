@@ -1,7 +1,7 @@
 import gsap from "gsap";
 import { useEffect, useState } from "react";
 import { heroVideo, smallHeroVideo } from "../utils";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { TweenLite } from "gsap/gsap-core";
 
 const Hero = () => {

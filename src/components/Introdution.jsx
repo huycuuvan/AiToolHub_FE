@@ -6,7 +6,7 @@ import {
   img2Light4Img,
 } from "../utils";
 import gsap from "gsap";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 const Introduction = () => {
   const refs = useRef([]);
