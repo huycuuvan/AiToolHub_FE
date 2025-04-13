@@ -1,5 +1,4 @@
 import { Routes, Route } from "react-router-dom";
-
 import TextAssistance from "./components/TextAssistance";
 import { TextToImage } from "./components/TextToImage";
 import { Home } from "./components/Home";
@@ -10,6 +9,7 @@ import TextToMusic from "./components/TextToMusic";
 import ImageToText from "./components/ImageToText";
 import { SignUp } from "./components/SignUp";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Ensure CSS is imported
 import TextToSpeech from "./components/Text-to-speech/TextToSpeech";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
@@ -21,7 +21,17 @@ const App = () => {
 
   return (
     <>
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer
+        position="top-right" // Ensure position is explicitly set
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <GoogleOAuthProvider clientId={clientId}>
         <AuthProvider>
           <Routes>

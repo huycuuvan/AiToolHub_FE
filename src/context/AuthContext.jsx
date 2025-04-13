@@ -1,4 +1,5 @@
 import { createContext, useState } from "react";
+import { toast } from "react-toastify"; // Import toast
 
 export const AuthContext = createContext();
 
@@ -11,6 +12,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Clear all toasts before logging out
+    toast.dismiss(); // Dismiss all active toasts
+
+    // Perform logout logic
     setUser(null);
     localStorage.removeItem("token");
   };

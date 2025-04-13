@@ -53,7 +53,9 @@ const TextToMusic = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error("Please log in to generate music.");
-      navigate("/login");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000); // Add delay to ensure toast is visible
       setLoading(false);
       return;
     }
@@ -80,7 +82,9 @@ const TextToMusic = () => {
         if (err.response.status === 401) {
           errorMessage = "Session expired. Please log in again.";
           localStorage.removeItem("token");
-          navigate("/login");
+          setTimeout(() => {
+            navigate("/login");
+          }, 1000);
         } else if (err.response.data) {
           errorMessage = "Error generating music.";
         }

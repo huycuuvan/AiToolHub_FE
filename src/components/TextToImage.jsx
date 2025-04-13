@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Loader from "./Loader";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
 
 export const TextToImage = () => {
   const navigate = useNavigate();
@@ -368,7 +369,6 @@ export const TextToImage = () => {
               </button>
             ))}
           </div>
-
           <div className="flex-grow mt-6 min-h-[300px] flex flex-col">
             <h3 className="text-xl font-bold">Choose a Style</h3>
             <div className="mt-3 p-3 border border-gray-700 rounded-xl overflow-y-auto max-h-[250px] scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
