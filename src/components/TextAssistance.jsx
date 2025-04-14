@@ -20,6 +20,7 @@ function TextAssistance() {
   const [currentConversationId, setCurrentConversationId] = useState(
     localStorage.getItem("currentConversationId") || null
   );
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const titleRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -53,12 +54,12 @@ function TextAssistance() {
         return;
       }
 
+      setHistoryLoading(true);
       try {
         const response = await axiosInstance.get("/api/tools/history/chatbot", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Group messages by conversation_id
         const historyMap = new Map();
         response.data.forEach((entry) => {
           if (!entry.conversationId) return;
@@ -73,10 +74,19 @@ function TextAssistance() {
             backendIds: [],
           };
 
-          // Append messages in order
           history.messages.push(
-            { role: "user", text: entry.input },
-            { role: "model", text: entry.response }
+            {
+              id: uuidv4(),
+              role: "user",
+              text: entry.input,
+              timestamp: entry.timestamp,
+            },
+            {
+              id: uuidv4(),
+              role: "model",
+              text: entry.response,
+              timestamp: entry.timestamp,
+            }
           );
           history.backendIds.push(entry.id);
           if (
@@ -89,13 +99,11 @@ function TextAssistance() {
           historyMap.set(entry.conversationId, history);
         });
 
-        // Sort histories newest first
         const groupedHistories = Array.from(historyMap.values()).sort(
           (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
         );
         setChatHistories(groupedHistories);
 
-        // Restore active conversation
         if (currentConversationId && groupedHistories.length > 0) {
           const activeHistory = groupedHistories.find(
             (h) => h.id === currentConversationId
@@ -126,6 +134,8 @@ function TextAssistance() {
           }
         }
         toast.error(errorMessage);
+      } finally {
+        setHistoryLoading(false);
       }
     };
 
@@ -137,7 +147,7 @@ function TextAssistance() {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, loading]);
 
   const handleInput = (e) => setInput(e.target.value);
 
@@ -151,7 +161,12 @@ function TextAssistance() {
       return;
     }
 
-    const userMessage = { role: "user", text: input };
+    const userMessage = {
+      id: uuidv4(),
+      role: "user",
+      text: input,
+      timestamp: new Date().toISOString(),
+    };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput("");
@@ -172,7 +187,12 @@ function TextAssistance() {
       );
 
       const aiText = response.data?.extractedText || "No response from AI";
-      const aiResponse = { role: "model", text: aiText };
+      const aiResponse = {
+        id: uuidv4(),
+        role: "model",
+        text: aiText,
+        timestamp: new Date().toISOString(),
+      };
       const finalMessages = [...updatedMessages, aiResponse];
       setMessages(finalMessages);
 
@@ -323,16 +343,15 @@ function TextAssistance() {
     return grouped;
   };
 
-  // Group messages into pairs (user and model) and reverse the pairs for display
+  // Group messages into pairs (user and model) for display
   const groupedMessages = [];
   for (let i = 0; i < messages.length; i += 2) {
     const userMessage = messages[i];
     const modelMessage = messages[i + 1] || null;
-    if (userMessage) {
+    if (userMessage && userMessage.role === "user") {
       groupedMessages.push({ user: userMessage, model: modelMessage });
     }
   }
-  const reversedGroupedMessages = [...groupedMessages].reverse();
 
   const groupedHistories = groupHistoriesByDate();
 
@@ -357,7 +376,11 @@ function TextAssistance() {
           </div>
           <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-5rem)]">
             {chatHistories.length === 0 ? (
-              <p className="text-gray-400 text-center">No history yet</p>
+              historyLoading ? (
+                <p className="text-gray-400 text-center">Loading history...</p>
+              ) : (
+                <p className="text-gray-400 text-center">No history yet</p>
+              )
             ) : (
               Object.keys(groupedHistories).map((date) => (
                 <div key={date} className="mb-4">
@@ -410,8 +433,8 @@ function TextAssistance() {
                   Start a conversation by typing below...
                 </div>
               )}
-              {reversedGroupedMessages.map((pair, pairIndex) => (
-                <div key={pairIndex} className="mb-4">
+              {groupedMessages.map((pair) => (
+                <div key={pair.user.id} className="mb-4">
                   {/* User message (question) */}
                   {pair.user && (
                     <div className="flex justify-end mb-2">
@@ -419,6 +442,9 @@ function TextAssistance() {
                         <ReactMarkdown>
                           {pair.user.text || "Error: No text available"}
                         </ReactMarkdown>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {new Date(pair.user.timestamp).toLocaleTimeString()}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -429,6 +455,9 @@ function TextAssistance() {
                         <ReactMarkdown>
                           {pair.model.text || "Error: No text available"}
                         </ReactMarkdown>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {new Date(pair.model.timestamp).toLocaleTimeString()}
+                        </div>
                       </div>
                     </div>
                   )}
