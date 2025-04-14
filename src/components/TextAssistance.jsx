@@ -49,7 +49,6 @@ function TextAssistance() {
     const fetchHistory = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
-        toast.error("Please log in to view chat history.");
         navigate("/login");
         return;
       }

@@ -89,7 +89,6 @@ export const TextToImage = () => {
     const fetchHistory = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
-        toast.error("Please log in to view history.");
         navigate("/login");
         return;
       }

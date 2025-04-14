@@ -98,7 +98,7 @@ export const Navbar = () => {
             to="/text-to-music"
             className="text-xl text-gray-200 hover:text-white"
           >
-            Text to Music
+            Text to Sound
           </Link>
           <Link
             to="/image-to-text"

@@ -10,12 +10,18 @@ const Footer = () => {
       { name: "Text to Speech", path: "/text-to-speech" },
     ],
     company: [
-      { name: "About", path: "/about" },
-      { name: "Privacy Policy", path: "/privacy" },
-      { name: "Terms of Service", path: "/terms" },
+      {
+        name: "About",
+        path: "https://en.wikipedia.org/wiki/Artificial_intelligence",
+      },
+      {
+        name: "Privacy Policy",
+        path: "https://openai.com/policies/row-privacy-policy/",
+      },
+      { name: "Terms of Service", path: "https://www.google.com" },
     ],
     social: [
-      { name: "Twitter", path: "https://twitter.com" },
+      { name: "Youtube", path: "https://youtube.com" },
       { name: "GitHub", path: "https://github.com" },
       { name: "LinkedIn", path: "https://linkedin.com" },
     ],

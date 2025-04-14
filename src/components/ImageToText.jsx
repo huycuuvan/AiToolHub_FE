@@ -127,6 +127,61 @@ export const ImageToText = () => {
     setImageFiles((prev) => [...prev, ...newFiles]);
   };
 
+  // Handle pasting images from clipboard
+  const handlePaste = async () => {
+    try {
+      // Check if the browser supports clipboard read
+      if (!navigator.clipboard || !navigator.clipboard.read) {
+        toast.error("Clipboard pasting is not supported in this browser.");
+        return;
+      }
+
+      // Request permission to access the clipboard
+      const permission = await navigator.permissions.query({
+        name: "clipboard-read",
+      });
+      if (permission.state === "denied") {
+        toast.error(
+          "Clipboard access denied. Please enable clipboard permissions."
+        );
+        return;
+      }
+
+      // Read clipboard items
+      const clipboardItems = await navigator.clipboard.read();
+      const newFiles = [];
+
+      for (const item of clipboardItems) {
+        // Check for image types (e.g., image/png, image/jpeg)
+        const imageType = item.types.find((type) => type.startsWith("image/"));
+        if (imageType) {
+          const blob = await item.getType(imageType);
+          const fileName = `pasted-image-${Date.now()}.${
+            imageType.split("/")[1]
+          }`;
+          const file = new File([blob], fileName, { type: imageType });
+          newFiles.push({
+            file,
+            preview: URL.createObjectURL(file),
+            name: fileName,
+            size: (file.size / 1024 / 1024).toFixed(2) + " MB",
+          });
+        }
+      }
+
+      if (newFiles.length === 0) {
+        toast.error("No images found in the clipboard.");
+        return;
+      }
+
+      setImageFiles((prev) => [...prev, ...newFiles]);
+      toast.success(`Pasted ${newFiles.length} image(s) successfully!`);
+    } catch (err) {
+      console.error("Error pasting from clipboard:", err);
+      toast.error("Failed to paste image: " + err.message);
+    }
+  };
+
   // Remove an image from the list
   const removeImage = (index) => {
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
@@ -355,16 +410,8 @@ export const ImageToText = () => {
                 id="fileUpload"
               />
               <button
+                onClick={handlePaste}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 flex items-center gap-2"
-                onClick={() =>
-                  navigator.clipboard
-                    .readText()
-                    .then((text) =>
-                      toast.info(
-                        "Clipboard pasting not supported in this demo."
-                      )
-                    )
-                }
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -380,6 +427,7 @@ export const ImageToText = () => {
                     d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                   />
                 </svg>
+                Paste
               </button>
             </div>
           </motion.div>

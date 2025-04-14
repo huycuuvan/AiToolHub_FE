@@ -60,7 +60,6 @@ const TextToSpeech = () => {
     const fetchHistory = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
-        toast.error("Please log in to view history.");
         navigate("/login");
         return;
       }
@@ -932,18 +931,33 @@ const TextToSpeech = () => {
           appearance: none;
           width: 16px;
           height: 16px;
-          background: #1f2937;
-          border: 2px solid #007bff;
+          background: #A5B4FC;
+          border: 2px solid #6366F1;
           border-radius: 50%;
           cursor: pointer;
+          box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         }
         input[type="range"]::-moz-range-thumb {
           width: 16px;
           height: 16px;
-          background: #1f2937;
-          border: 2px solid #007bff;
+          background: #A5B4FC;
+          border: 2px solid #6366F1;
           border-radius: 50%;
           cursor: pointer;
+          box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: #1F2937;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: #4B5563;
+          border-radius: 3px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background: #6B7280;
         }
       `}</style>
     </div>
