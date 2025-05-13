@@ -29,7 +29,7 @@ export const TextToImage = () => {
 
   const models = [
     { name: "Stable Diffusion 1.0", api: "/api/tools/model1" },
-    { name: "Stable Diffusion 3.5", api: "/api/tools/model2" },
+    { name: "Stable Diffusion SDXL", api: "/api/tools/model2" },
   ];
 
   const styles = [

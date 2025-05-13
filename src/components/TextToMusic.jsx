@@ -461,7 +461,7 @@ const TextToMusic = () => {
             transition={{ duration: 0.5 }}
             className="relative z-20"
           >
-            <div className="flex items-center space-x-2 mb-6">
+            <div className="flex items-center space-x-2 mb-6 text-nowrap">
               <input
                 type="text"
                 value={text}

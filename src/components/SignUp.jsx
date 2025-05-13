@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import gsap from "gsap";
 
 // Form validation schema using zod
 const formSchema = z.object({
@@ -18,11 +19,22 @@ const formSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters long" }),
 });
 
+// Define icons (consistent with Login component)
+const Icons = {
+  spinner: (props) => (
+    <div
+      className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"
+      {...props}
+    />
+  ),
+};
+
 export const SignUp = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [backgroundIndex, setBackgroundIndex] = useState(0);
   const heroRef = useRef(null);
+  const logoRef = useRef(null); // Ref for the "AI Tool Hub" button
 
   // Use react-hook-form for form handling
   const {
@@ -62,18 +74,19 @@ export const SignUp = () => {
   // Handle form submission
   const onSubmit = async (data) => {
     setIsLoading(true);
-  
+
     try {
       const response = await fetch("http://localhost:8080/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-  
+
       if (!response.ok) {
         const responseData = await response.json(); // Sử dụng response.json() nếu backend trả về JSON
-        let errorMessage = responseData.error || responseData.message || "Sign-up failed";
-  
+        let errorMessage =
+          responseData.error || responseData.message || "Sign-up failed";
+
         // Handle specific error messages from backend
         if (errorMessage.includes("Email already in use")) {
           toast.error("Registration failed: Email already in use!");
@@ -84,7 +97,7 @@ export const SignUp = () => {
         }
         throw new Error(errorMessage);
       }
-  
+
       const responseData = await response.text(); // Get full response including success message
       toast.success("Registration successful! Redirecting to login...");
       setTimeout(() => navigate("/login"), 3000);
@@ -95,15 +108,48 @@ export const SignUp = () => {
     }
   };
 
-  // Define icons (consistent with Login component)
-  const Icons = {
-    spinner: (props) => (
-      <div
-        className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"
-        {...props}
-      />
-    ),
+  // Handle navigation to home
+  const handleGoHome = () => {
+    navigate("/");
   };
+
+  // GSAP Animation for the Logo (copied from Login)
+  useEffect(() => {
+    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1 });
+    tl.fromTo(
+      logoRef.current,
+      { y: 10, opacity: 0, scale: 0.95, rotation: -2 },
+      {
+        y: -10,
+        opacity: 1,
+        scale: 1.05,
+        rotation: 2,
+        ease: "elastic.out(1, 0.5)",
+        duration: 1.5,
+      }
+    )
+      .to(logoRef.current, {
+        y: 0,
+        scale: 1,
+        rotation: 0,
+        ease: "power2.inOut",
+        duration: 1,
+      })
+      .to(logoRef.current, {
+        boxShadow: "0 0 15px rgba(255, 255, 255, 0.6)",
+        scale: 1.1,
+        opacity: 0.95,
+        duration: 0.8,
+        yoyo: true,
+        repeat: 1,
+      })
+      .to(logoRef.current, {
+        boxShadow: "0 0 5px rgba(255, 255, 255, 0.3)",
+        scale: 1,
+        opacity: 1,
+        duration: 0.7,
+      });
+  }, []);
 
   return (
     <div className="flex min-h-screen w-full">
@@ -117,6 +163,31 @@ export const SignUp = () => {
         key={backgroundIndex}
       >
         <div className="absolute inset-0 bg-black/50" />
+
+        {/* AI Tool Hub Text as Link to Home with Animation (copied from Login) */}
+        <motion.button
+          ref={logoRef}
+          onClick={handleGoHome}
+          className="absolute top-4 left-4 text-white text-2xl font-bold px-4 py-2 rounded-md transition duration-300 z-20 logo-title"
+          style={{
+            fontFamily: "'Poppins', sans-serif",
+            background: "rgba(0, 0, 0, 0.5)",
+            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.3)",
+            letterSpacing: "1px",
+            textTransform: "uppercase",
+            cursor: "pointer",
+          }}
+          whileHover={{
+            scale: 1.1,
+            boxShadow: "0 8px 20px rgba(255, 255, 255, 0.5)",
+          }}
+          whileTap={{
+            scale: 0.95,
+          }}
+        >
+          AI Tool Hub
+        </motion.button>
+
         <div className="relative z-10 flex flex-col items-center justify-center w-full h-full text-white p-8">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
